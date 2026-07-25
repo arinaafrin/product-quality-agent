@@ -31,8 +31,8 @@ export default function AgentChat({ open, onClose }) {
       <div className="chat-messages">
         {messages.length === 0 && (
           <p className="chat-empty">
-            Try: "why did today&rsquo;s import reject records?" or "why does invalid currency get
-            rejected?" — answers are grounded in the validation rules and the last run you
+            Try: &quot;why did today&rsquo;s import reject records?&quot; or &quot;why does invalid currency get
+            rejected?&quot; — answers are grounded in the validation rules and the last run you
             uploaded.
           </p>
         )}

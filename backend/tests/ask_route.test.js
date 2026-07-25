@@ -42,7 +42,7 @@ describe('POST /api/ask', () => {
       ask: jest.fn().mockRejectedValue(new Error('boom')),
     }));
     const { app } = require('../src/server');
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const res = await request(app).post('/api/ask').send({ question: 'anything' });
 

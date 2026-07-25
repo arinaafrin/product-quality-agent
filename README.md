@@ -5,6 +5,20 @@ e-commerce product feed (the domain from the Finnish Design Shop job spec).
 Stack: **Node.js/Express** backend, **React (Vite)** frontend — matching the
 role's tech stack — with GitLab CI/CD and Docker throughout.
 
+**Highlights:**
+- 🤖 **Agent-based workflow** — `agent.js` runs a real Anthropic tool-use
+  loop (`search_knowledge_base`), with automatic fallback to deterministic
+  offline retrieval if no API key is set or a call fails.
+- 🔌 **MCP integration** — `mcp_server.js` exposes the same validation +
+  retrieval logic as MCP tools over stdio, callable from Claude Desktop,
+  Claude Code, or any other MCP client.
+- 📚 **RAG solution** — `rag_store.js` is a from-scratch TF-IDF retrieval
+  store over rule docs and validation run logs, architected as a swap-in
+  point for a real vector DB (pgvector/Pinecone/Qdrant) in production.
+- ✅ **Production-ready QA** — 59 tests across backend (Jest/Supertest,
+  ~93% statement coverage, including a mocked LLM tool-use loop) and
+  frontend (Vitest/Testing Library), enforced in CI on every push.
+
 > **Swap-in point:** the whole thing is built around one idea — the domain
 > logic in `backend/src/quality_engine.js` is the only file you'd change to
 > point this at a different data type (orders, IoT telemetry, log lines,
@@ -49,7 +63,7 @@ product-quality-agent/
 │   │       ├── sample_feed.json
 │   │       └── knowledge_base/ # validation-rules.md (generated) + faq.md (hand-written)
 │   ├── scripts/build-kb.js     # regenerates validation-rules.md from rule metadata
-│   └── tests/                  # 19 Jest tests: rules, RAG retrieval, API
+│   └── tests/                  # 33 Jest tests: rule logic, RAG retrieval, agent (incl. mocked LLM tool-use loop), API/MCP routes — ~93% statement coverage
 └── frontend/
     └── src/
         ├── App.jsx              # nav rail + chat drawer shell
@@ -59,7 +73,8 @@ product-quality-agent/
         │   ├── FailureTable.jsx
         │   ├── RulesView.jsx
         │   └── AgentChat.jsx
-        └── styles/index.css     # design tokens
+        ├── styles/index.css     # design tokens
+        └── *.test.js(x)         # 26 Vitest + Testing Library tests, colocated per component
 ```
 
 ### Why two "agent" surfaces (`mcp_server.js` vs `agent.js`)?
@@ -113,18 +128,27 @@ npm run mcp
 ## Testing & linting
 
 ```bash
-cd backend && npm test   # 19 tests: rule logic, RAG retrieval, API integration
+# Backend — 33 Jest tests, ~93% statement / 96% line coverage
+cd backend && npm test    # includes a mocked Anthropic tool-use loop (no real API key needed)
 cd backend && npm run lint
+
+# Frontend — 26 Vitest + React Testing Library tests
+cd frontend && npm test   # component rendering, user interactions, API mocking
 cd frontend && npm run lint
 cd frontend && npm run build   # also acts as a compile smoke-test in CI
 ```
+
+Both suites are designed to run fully offline in CI: the backend agent tests
+mock `@anthropic-ai/sdk` to exercise the LLM tool-call loop, the turn limit,
+and the fallback-to-offline-synthesis path without hitting a real API; the
+frontend tests mock `api.js` so no backend needs to be running.
 
 ## CI/CD (`.gitlab-ci.yml`)
 
 | Stage    | What happens |
 |----------|--------------|
 | `lint`   | ESLint on both `backend/` and `frontend/`, fails fast |
-| `test`   | Jest (backend, with coverage + JUnit report) and a Vite production build (frontend, as a compile check) |
+| `test`   | Jest (backend, with coverage + JUnit report), Vitest (frontend, component tests), and a Vite production build (frontend, as a compile check) |
 | `build`  | On `main` or a tag: build & push both Docker images to the GitLab container registry, tagged with the commit SHA and `latest` |
 | `deploy` | `staging` auto-deploys on `main`; `production` is a manual, tag-triggered job |
 
