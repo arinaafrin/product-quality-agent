@@ -1,9 +1,3 @@
-// Covers the ANTHROPIC_API_KEY branch of agent.js: the tool-use loop against
-// the Anthropic SDK, the turn-limit fallback, and falling back to offline
-// synthesis whenever the LLM call (or an unexpected tool name) fails.
-//
-// @anthropic-ai/sdk is mocked as a virtual module so these tests run
-// whether or not the real package is installed.
 jest.mock('@anthropic-ai/sdk', () => jest.fn(), { virtual: true });
 
 const Anthropic = require('@anthropic-ai/sdk');

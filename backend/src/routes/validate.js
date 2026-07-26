@@ -19,7 +19,7 @@ router.post('/validate', (req, res) => {
 });
 
 router.get('/runs', (_req, res) => {
-  res.json(runHistory.map(({ results, ...rest }) => rest)); // list view: omit full record dump
+  res.json(runHistory.map(({ results, ...rest }) => rest)); 
 });
 
 router.get('/runs/latest', (_req, res) => {

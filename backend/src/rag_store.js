@@ -6,15 +6,6 @@
  * It indexes two kinds of documents:
  *   1. Knowledge base markdown files (the "why" — validation rules, FAQ)
  *   2. Validation run logs (the "what happened" — actual rejections)
- *
- * Retrieval uses TF-IDF-weighted cosine similarity over a bag-of-words
- * index. That is intentionally simple: it needs no API key, no network
- * call, and no vector database to run this project end-to-end. In a real
- * production deployment you would swap this module for a real embedding
- * model + vector store (pgvector, Pinecone, Qdrant, ...) — every other
- * file in this project (mcp_server.js, agent.js, the API routes) only
- * calls `ragStore.search(query, k)`, so that swap is contained to this
- * one file.
  */
 const fs = require('fs');
 const path = require('path');

@@ -9,11 +9,6 @@
  *
  * Each rule returns either `null` (record passes) or a `Failure` object:
  *   { ruleId, field, message, severity }
- *
- * Rule metadata (id, title, description, severity) is intentionally kept
- * next to the rule function so the same source of truth can be rendered
- * into the knowledge base markdown files (see scripts/build-kb.js) and
- * surfaced by the RAG store / agent when it explains a rejection.
  */
 
 const VALID_CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'SEK', 'DKK', 'NOK']);

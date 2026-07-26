@@ -1,7 +1,5 @@
 const request = require('supertest');
 
-// Each test gets a fresh module registry so the in-memory runHistory in
-// routes/validate.js doesn't leak state between tests.
 function freshApp() {
   jest.resetModules();
   return require('../src/server').app;

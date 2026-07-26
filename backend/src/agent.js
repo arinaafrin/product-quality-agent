@@ -7,14 +7,9 @@
  * (ragStore.search) and composes a grounded answer directly from the
  * retrieved chunks, with no LLM call at all. This is deliberately simple
  * and fully offline, matching the same "no external dependency" approach
- * as rag_store.js — it always works, with zero configuration.
+ * as rag_store.js: it always works, with zero configuration.
  *
- * Optional upgrade — set ANTHROPIC_API_KEY: the agent switches to a real
- * tool-use loop against the Anthropic Messages API for more natural,
- * synthesized answers, while still grounding every answer in the same
- * search_knowledge_base tool. If the API call fails for any reason (bad
- * key, network, rate limit), it falls back to the offline synthesis
- * rather than erroring out.
+ * Optional upgrade — set ANTHROPIC_API_KEY
  */
 const { ragStore } = require('./rag_store');
 
