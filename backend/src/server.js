@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { router: validateRouter } = require('./routes/validate');
 const { router: askRouter } = require('./routes/ask');
 
@@ -13,6 +14,11 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok', uptime: process.u
 
 app.use('/api', validateRouter);
 app.use('/api', askRouter);
+
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+});
 
 app.use((err, _req, res, _next) => {
   console.error(err);
