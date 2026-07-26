@@ -1,0 +1,138 @@
+# GitLab CI/CD pipeline for product-quality-agent
+#
+# Stages:
+#   lint      -> eslint on backend + frontend (fast fail)
+#   test      -> jest (backend, with coverage) + vite build smoke-check (frontend)
+#   build     -> docker build & push both images to the project's container registry
+#   deploy    -> manual, environment-scoped deploy (staging auto on main, prod manual)
+#
+# Assumes GitLab's built-in container registry (CI_REGISTRY*) and a runner
+# with docker-in-docker available. Swap DEPLOY_* steps for your actual
+# target (Azure Container Apps / UpCloud / k8s) — the placeholders show
+# where that goes.
+
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/frontend
+  NODE_IMAGE: node:20-alpine
+
+.node_cache: &node_cache
+  cache:
+    key:
+      files:
+        - $DIR/package-lock.json
+    paths:
+      - $DIR/node_modules/
+    policy: pull-push
+
+# ---------- LINT ----------
+lint:backend:
+  stage: lint
+  image: $NODE_IMAGE
+  variables: { DIR: backend }
+  <<: *node_cache
+  script:
+    - cd backend && npm ci --no-audit --no-fund
+    - npm run lint
+
+lint:frontend:
+  stage: lint
+  image: $NODE_IMAGE
+  variables: { DIR: frontend }
+  <<: *node_cache
+  script:
+    - cd frontend && npm ci --no-audit --no-fund
+    - npm run lint
+
+# ---------- TEST ----------
+test:backend:
+  stage: test
+  image: $NODE_IMAGE
+  variables: { DIR: backend }
+  <<: *node_cache
+  script:
+    - cd backend && npm ci --no-audit --no-fund
+    - npm test -- --ci --coverage
+  coverage: '/All files\s*\|\s*([\d.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit: backend/junit.xml
+    paths:
+      - backend/coverage/
+
+build-check:frontend:
+  stage: test
+  image: $NODE_IMAGE
+  variables: { DIR: frontend }
+  <<: *node_cache
+  script:
+    - cd frontend && npm ci --no-audit --no-fund
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 hour
+
+# ---------- BUILD (docker images) ----------
+build:backend-image:
+  stage: build
+  image: docker:24
+  services: [docker:24-dind]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$BACKEND_IMAGE:latest" ./backend
+    - docker push "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$BACKEND_IMAGE:latest"
+
+build:frontend-image:
+  stage: build
+  image: docker:24
+  services: [docker:24-dind]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t "$FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$FRONTEND_IMAGE:latest" ./frontend
+    - docker push "$FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$FRONTEND_IMAGE:latest"
+
+# ---------- DEPLOY ----------
+# Placeholders for the actual target infra (Azure Container Apps / UpCloud).
+# Replace `script` with e.g. `az containerapp update ...` or an UpCloud API
+# call, or a `kubectl apply` / helm upgrade if running on k8s.
+deploy:staging:
+  stage: deploy
+  image: alpine:3.20
+  environment:
+    name: staging
+    url: https://staging.product-quality-agent.example.com
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - echo "Deploying $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA and $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA to staging"
+    - echo "Replace this with: az containerapp update / kubectl apply / UpCloud API call"
+
+deploy:production:
+  stage: deploy
+  image: alpine:3.20
+  environment:
+    name: production
+    url: https://product-quality-agent.example.com
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+  script:
+    - echo "Deploying $BACKEND_IMAGE:$CI_COMMIT_TAG and $FRONTEND_IMAGE:$CI_COMMIT_TAG to production"
+    - echo "Replace this with: az containerapp update / kubectl apply / UpCloud API call"

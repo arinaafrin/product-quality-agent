@@ -1,0 +1,14 @@
+[
+  { "sku": "FDS-10234", "title": "Kaari Pendant Lamp", "price": 289, "currency": "EUR", "category": "lighting", "imageUrl": "https://cdn.fds.example/kaari-pendant.jpg" },
+  { "sku": "FDS-10235", "title": "Nord Oak Dining Chair", "price": 349, "currency": "EUR", "category": "furniture", "imageUrl": "https://cdn.fds.example/nord-chair.png" },
+  { "sku": "FDS-10236", "title": "", "price": 59, "currency": "EUR", "category": "textiles", "imageUrl": "https://cdn.fds.example/wool-throw.webp" },
+  { "sku": "FDS-10237", "title": "Ceramic Vase Duo", "price": -12, "currency": "EUR", "category": "decor", "imageUrl": "https://cdn.fds.example/vase-duo.jpg" },
+  { "sku": "FDS-10238", "title": "Birch Coffee Table", "price": 199, "currency": "RUB", "category": "furniture", "imageUrl": "https://cdn.fds.example/birch-table.jpg" },
+  { "sku": "FDS-10239", "title": "Linen Napkin Set", "price": 29, "currency": "EUR", "category": "tableware", "imageUrl": "cdn.fds.example/napkins.jpg" },
+  { "sku": "FDS-10240", "title": "Outdoor Teak Bench", "price": 459, "currency": "SEK", "category": "patio", "imageUrl": "https://cdn.fds.example/teak-bench.jpg" },
+  { "sku": "FDS10241", "title": "Kids Rocking Horse", "price": 89, "currency": "EUR", "category": "kids", "imageUrl": "https://cdn.fds.example/rocking-horse.png" },
+  { "sku": "FDS-10242", "title": "Glass Water Carafe", "price": 39, "currency": "EUR", "category": "tableware", "imageUrl": "https://cdn.fds.example/carafe.jpg" },
+  { "sku": "FDS-10242", "title": "Glass Water Carafe (re-export)", "price": 39, "currency": "EUR", "category": "tableware", "imageUrl": "https://cdn.fds.example/carafe.jpg" },
+  { "sku": "FDS-10243", "title": "Wool Area Rug 200x300", "price": 449, "currency": "EUR", "category": "textiles", "imageUrl": "https://cdn.fds.example/wool-rug.webp" },
+  { "sku": "FDS-10244", "title": "Table Lamp Aalto", "price": null, "currency": "EUR", "category": "lighting", "imageUrl": "https://cdn.fds.example/aalto-lamp.jpg" }
+]
