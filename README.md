@@ -1,7 +1,6 @@
 # Product Quality Agent
 
-A validation pipeline + RAG knowledge base + grounded agent, applied to an
-e-commerce product feed (the domain from the Finnish Design Shop job spec).
+A validation pipeline + RAG knowledge base + grounded agent, applied to an e-commerce product feed.
 Stack: **Node.js/Express** backend, **React (Vite)** frontend — matching the
 role's tech stack — with GitLab CI/CD and Docker throughout.
 
