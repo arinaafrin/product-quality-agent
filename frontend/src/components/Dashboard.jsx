@@ -50,6 +50,12 @@ export default function Dashboard() {
           style={{ display: 'none' }}
         />
         {fileName && <span className="file-label">{fileName}</span>}
+        <a className="secondary-btn" href="/api/sample-feed.json" download="sample_feed.json">
+          Download sample JSON
+        </a>
+        <a className="secondary-btn" href="/api/sample-feed.csv" download="sample_feed.csv">
+          Download sample CSV
+        </a>
       </div>
 
       {error && (

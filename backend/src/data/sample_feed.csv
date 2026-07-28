@@ -1,0 +1,13 @@
+sku,title,price,currency,category,imageUrl
+FDS-10234,Kaari Pendant Lamp,289,EUR,lighting,https://cdn.fds.example/kaari-pendant.jpg
+FDS-10235,Nord Oak Dining Chair,349,EUR,furniture,https://cdn.fds.example/nord-chair.png
+FDS-10236,,59,EUR,textiles,https://cdn.fds.example/wool-throw.webp
+FDS-10237,Ceramic Vase Duo,-12,EUR,decor,https://cdn.fds.example/vase-duo.jpg
+FDS-10238,Birch Coffee Table,199,RUB,furniture,https://cdn.fds.example/birch-table.jpg
+FDS-10239,Linen Napkin Set,29,EUR,tableware,cdn.fds.example/napkins.jpg
+FDS-10240,Outdoor Teak Bench,459,SEK,patio,https://cdn.fds.example/teak-bench.jpg
+FDS10241,Kids Rocking Horse,89,EUR,kids,https://cdn.fds.example/rocking-horse.png
+FDS-10242,Glass Water Carafe,39,EUR,tableware,https://cdn.fds.example/carafe.jpg
+FDS-10242,Glass Water Carafe (re-export),39,EUR,tableware,https://cdn.fds.example/carafe.jpg
+FDS-10243,Wool Area Rug 200x300,449,EUR,textiles,https://cdn.fds.example/wool-rug.webp
+FDS-10244,Table Lamp Aalto,,EUR,lighting,https://cdn.fds.example/aalto-lamp.jpg

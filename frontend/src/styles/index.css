@@ -224,6 +224,22 @@ body {
 .uploader button:hover, .primary-btn:hover { background: var(--harbor-deep); }
 .uploader button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.secondary-btn {
+  background: transparent;
+  color: var(--harbor);
+  border: 1px solid var(--harbor);
+  padding: 8px 15px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.secondary-btn:hover { background: var(--harbor); color: #fff; }
+
 .uploader .file-label {
   font-size: 13px;
   color: var(--ink-soft);

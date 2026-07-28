@@ -1,10 +1,19 @@
 const express = require('express');
+const path = require('path');
 const { validateFeed, getRuleDocs } = require('../quality_engine');
 const { ragStore } = require('../rag_store');
 
 const router = express.Router();
 const runHistory = [];
 const MAX_HISTORY = 20;
+
+router.get('/sample-feed.csv', (_req, res) => {
+  res.download(path.join(__dirname, '../data/sample_feed.csv'), 'sample_feed.csv');
+});
+
+router.get('/sample-feed.json', (_req, res) => {
+  res.download(path.join(__dirname, '../data/sample_feed.json'), 'sample_feed.json');
+});
 
 router.post('/validate', (req, res) => {
   const records = req.body?.records;
