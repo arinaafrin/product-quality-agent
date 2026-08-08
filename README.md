@@ -1,49 +1,48 @@
 # Product Quality Agent
 
-A validation pipeline + RAG knowledge base + grounded agent, applied to an e-commerce product feed.
-Stack: **Node.js/Express** backend, **React (Vite)** frontend, with GitLab CI/CD and Docker throughout.
+A tool that checks product data, stores knowledge about the rules, and lets you ask questions about the results. Built on an e-commerce product feed as the example use case.
+Stack: **Node.js/Express** backend, **React (Vite)** frontend, with GitLab CI/CD and Docker.
 
-**Highlights:**
-- 🤖 **Agent-based workflow** — `agent.js` runs a real Anthropic tool-use
-  loop (`search_knowledge_base`), with automatic fallback to deterministic
-  offline retrieval if no API key is set or a call fails.
-- 🔌 **MCP integration** — `mcp_server.js` exposes the same validation +
-  retrieval logic as MCP tools over stdio, callable from Claude Desktop,
-  Claude Code, or any other MCP client.
-- 📚 **RAG solution** — `rag_store.js` is a from-scratch TF-IDF retrieval
-  store over rule docs and validation run logs, architected as a swap-in
-  point for a real vector DB (pgvector/Pinecone/Qdrant) in production.
-- ✅ **Production-ready QA** — 59 tests across backend (Jest/Supertest,
-  ~93% statement coverage, including a mocked LLM tool-use loop) and
-  frontend (Vitest/Testing Library), enforced in CI on every push.
+**What's inside:**
+- 🤖 **An agent that answers questions** — `agent.js` runs a real Anthropic tool-use
+  loop (`search_knowledge_base`). If no API key is set, or a call fails, it falls
+  back to a simpler offline search so it still works.
+- 🔌 **MCP support** — `mcp_server.js` exposes the same checks and search tools
+  through MCP, so Claude Desktop, Claude Code, or any other MCP client can call
+  them directly.
+- 📚 **Its own search system (RAG)** — `rag_store.js` is a simple TF-IDF search
+  built from scratch, over the rule docs and past validation runs. It's built so
+  you could swap in a real vector database (pgvector, Pinecone, Qdrant) later
+  without much rework.
+- ✅ **Well-tested** — 59 tests across backend (Jest/Supertest, ~93% statement
+  coverage, including a mocked LLM loop) and frontend (Vitest/Testing Library),
+  run automatically in CI on every push.
 
-> **Swap-in point:** the whole thing is built around one idea — the domain
-> logic in `backend/src/quality_engine.js` is the only file you'd change to
-> point this at a different data type (orders, IoT telemetry, log lines,
-> generic CSV imports). `rag_store.js`, `mcp_server.js`, `agent.js`, the API
-> routes, and the entire React UI stay almost untouched, since they just call
-> whatever `validate()` and rule metadata a given engine exposes.
+> **Built to be reused:** almost everything here is generic on purpose. The only
+> file that actually knows about "products" is `backend/src/quality_engine.js`.
+> Swap that one file for a different data type (orders, sensor logs, CSV
+> imports, anything) and the search system, the MCP server, the agent, the API
+> routes, and the whole React UI keep working as-is.
 
 ## What it does
 
-1. **Validates** — upload a JSON product feed, get every record checked
-   against 7 rules (missing title, invalid price, unsupported currency,
-   broken image URL, unknown category, malformed SKU, duplicate SKU) with a
-   pass/warn/reject verdict and a human-readable reason per failure.
-2. **Explains** — every rule's rationale lives in a generated knowledge base
-   doc, plus a hand-written FAQ on how to triage failures. A lightweight
-   in-memory RAG store (TF-IDF, no external vector DB or API key required)
-   indexes both the docs and every validation run you upload.
-3. **Answers** — a chat agent answers grounded questions like *"why did
-   today's import reject 40 items?"* or *"why does an unsupported currency
-   get rejected?"*. By default it works with **zero configuration and no
-   API key**: it retrieves from the RAG store and composes the answer
-   directly from the retrieved text. Set `ANTHROPIC_API_KEY` to optionally
-   upgrade it to an Anthropic-generated, more natural answer over the same
-   grounded retrieval — with automatic fallback to the offline mode if that
-   call ever fails.
+1. **Checks your data** — upload a JSON product feed and every item gets checked
+   against 7 rules (missing title, bad price, unsupported currency, broken
+   image link, unknown category, bad SKU format, duplicate SKU). Each item gets
+   a pass/warn/reject result with a plain-English reason.
+2. **Explains why** — every rule has a short write-up explaining what it checks
+   and why, plus a FAQ for common questions. A lightweight built-in search
+   (TF-IDF, no external database or API key needed) indexes both the docs and
+   every validation run you upload.
+3. **Answers your questions** — ask things like *"why did today's import reject
+   40 items?"* or *"why does an unsupported currency get rejected?"* and get a
+   grounded answer. It works out of the box with **no setup and no API key**:
+   it searches its own knowledge base and builds an answer from what it finds.
+   If you add an `ANTHROPIC_API_KEY`, it upgrades to a more natural,
+   Anthropic-generated answer over the same search results, and still falls
+   back to the simple version if that call ever fails.
 
-## Architecture
+## How it's put together
 
 ```
 product-quality-agent/
@@ -52,42 +51,42 @@ product-quality-agent/
 ├── backend/
 │   ├── src/
 │   │   ├── quality_engine.js   # <- swap this for a new data type
-│   │   ├── rag_store.js        # TF-IDF retrieval (swap for pgvector/etc. in prod)
-│   │   ├── mcp_server.js       # standalone MCP server (stdio) for external clients
+│   │   ├── rag_store.js        # TF-IDF search (swap for pgvector/etc. later)
+│   │   ├── mcp_server.js       # standalone MCP server (stdio) for outside clients
 │   │   ├── agent.js            # Anthropic tool-use loop for the chat feature
 │   │   ├── server.js           # Express app
 │   │   ├── routes/             # /api/validate, /api/rules, /api/ask
 │   │   └── data/
 │   │       ├── sample_feed.json
-│   │       └── knowledge_base/ # validation-rules.md (generated) + faq.md (hand-written)
-│   ├── scripts/build-kb.js     # regenerates validation-rules.md from rule metadata
-│   └── tests/                  # 33 Jest tests: rule logic, RAG retrieval, agent (incl. mocked LLM tool-use loop), API/MCP routes — ~93% statement coverage
+│   │       └── knowledge_base/ # validation-rules.md (auto-generated) + faq.md (written by hand)
+│   ├── scripts/build-kb.js     # rebuilds validation-rules.md from the rules themselves
+│   └── tests/                  # 33 Jest tests: rules, search, agent (with a mocked LLM loop), API/MCP routes — ~93% statement coverage
 └── frontend/
     └── src/
         ├── App.jsx              # nav rail + chat drawer shell
         ├── components/
         │   ├── Dashboard.jsx    # uploader, stat cards, manifest strip, failure table
-        │   ├── ManifestStrip.jsx# signature element: one hoverable tick per record
+        │   ├── ManifestStrip.jsx# a hoverable tick for every record
         │   ├── FailureTable.jsx
         │   ├── RulesView.jsx
         │   └── AgentChat.jsx
         ├── styles/index.css     # design tokens
-        └── *.test.js(x)         # 26 Vitest + Testing Library tests, colocated per component
+        └── *.test.js(x)         # 26 Vitest + Testing Library tests, next to each component
 ```
 
-### Why two "agent" surfaces (`mcp_server.js` vs `agent.js`)?
+### Why are there two "agent" files (`mcp_server.js` and `agent.js`)?
 
-- `mcp_server.js` is a real MCP server over stdio — point Claude Desktop,
-  Claude Code, or any other MCP client at it (`node src/mcp_server.js`) and
-  it can call `validate_feed`, `search_knowledge_base`, and `get_rule_docs`
-  directly. This is the piece that exposes the agent's tools to any
-  external MCP-compatible client, not just the bundled UI.
-- `agent.js` is the fast path used by the bundled React chat UI: by default
-  it synthesizes an answer directly from `rag_store.js` retrieval results,
-  no LLM call and no API key required. If `ANTHROPIC_API_KEY` is set, it
-  upgrades to the Anthropic Messages API's tool-use loop over the same
-  retrieval, falling back to offline synthesis on any error. Both this and
-  `mcp_server.js` ultimately read from the same `rag_store.js` singleton.
+- `mcp_server.js` is a real MCP server that runs over stdio. Point Claude
+  Desktop, Claude Code, or any other MCP client at it (`node src/mcp_server.js`)
+  and it can call `validate_feed`, `search_knowledge_base`, and `get_rule_docs`
+  directly. This is what lets outside tools use the agent, not just the app's
+  own UI.
+- `agent.js` is what powers the chat feature in the React app. By default it
+  builds an answer straight from a `rag_store.js` search, no LLM call and no
+  API key needed. Set `ANTHROPIC_API_KEY` and it upgrades to the Anthropic
+  Messages API's tool-use loop over the same search results, falling back to
+  the simple version if anything goes wrong. Both files read from the same
+  `rag_store.js` underneath.
 
 ## Running it locally
 
@@ -96,7 +95,7 @@ product-quality-agent/
 cd backend
 cp .env.example .env        # ANTHROPIC_API_KEY is optional — /api/ask works without it
 npm install
-npm run build-kb            # optional: regenerate the rules doc from quality_engine.js
+npm run build-kb            # optional: rebuild the rules doc from quality_engine.js
 npm run dev                 # http://localhost:4000
 
 # Frontend (separate terminal)
@@ -106,8 +105,8 @@ npm run dev                 # http://localhost:5173 (proxies /api to :4000)
 ```
 
 Try it: open the frontend, upload `backend/src/data/sample_feed.json`, watch
-the manifest strip populate, then open "Ask the agent" and ask why specific
-SKUs were rejected.
+the manifest strip fill in, then open "Ask the agent" and ask why certain
+SKUs got rejected.
 
 ### With Docker Compose
 
@@ -124,7 +123,7 @@ cd backend
 npm run mcp
 ```
 
-## Testing & linting
+## Testing and linting
 
 ```bash
 # Backend — 33 Jest tests, ~93% statement / 96% line coverage
@@ -134,37 +133,36 @@ cd backend && npm run lint
 # Frontend — 26 Vitest + React Testing Library tests
 cd frontend && npm test   # component rendering, user interactions, API mocking
 cd frontend && npm run lint
-cd frontend && npm run build   # also acts as a compile smoke-test in CI
+cd frontend && npm run build   # also works as a build check in CI
 ```
 
-Both suites are designed to run fully offline in CI: the backend agent tests
-mock `@anthropic-ai/sdk` to exercise the LLM tool-call loop, the turn limit,
-and the fallback-to-offline-synthesis path without hitting a real API; the
-frontend tests mock `api.js` so no backend needs to be running.
+Both test suites run fully offline in CI: the backend agent tests mock
+`@anthropic-ai/sdk` to test the LLM tool-call loop, the turn limit, and the
+fallback path, without ever calling the real API. The frontend tests mock
+`api.js`, so no backend needs to be running.
 
 ## CI/CD (`.gitlab-ci.yml`)
 
 | Stage    | What happens |
 |----------|--------------|
 | `lint`   | ESLint on both `backend/` and `frontend/`, fails fast |
-| `test`   | Jest (backend, with coverage + JUnit report), Vitest (frontend, component tests), and a Vite production build (frontend, as a compile check) |
-| `build`  | On `main` or a tag: build & push both Docker images to the GitLab container registry, tagged with the commit SHA and `latest` |
-| `deploy` | `staging` auto-deploys on `main`; `production` is a manual, tag-triggered job |
+| `test`   | Jest (backend, with coverage + JUnit report), Vitest (frontend, component tests), and a Vite production build (frontend, as a build check) |
+| `build`  | On `main` or a tag: builds and pushes both Docker images to the GitLab container registry, tagged with the commit SHA and `latest` |
+| `deploy` | `staging` deploys automatically on `main`; `production` is manual and tag-triggered |
 
-The `deploy` jobs are placeholders (`echo` statements) marking exactly where
-to drop in `az containerapp update`, an UpCloud API call, or `kubectl
-apply`/`helm upgrade` for the target infra — intentionally left open since
-that depends on the specific Azure/UpCloud setup in use.
+The `deploy` jobs are placeholders (just `echo` statements) marking where
+you'd add `az containerapp update`, an UpCloud API call, or `kubectl
+apply`/`helm upgrade`. Left open on purpose, since that depends on whatever
+Azure or UpCloud setup you're using.
 
-## Extending to a different data type
+## Using it for a different kind of data
 
-1. Duplicate `quality_engine.js`, replace the `rules` array with rules for
-   the new record shape (keep the `{ ruleId, field, message, severity }`
-   failure shape).
-2. Run `npm run build-kb` to regenerate the knowledge base doc — or write a
-   new `build-kb.js` if the new domain needs different narrative docs (an
-   FAQ, a runbook).
-3. Everything else — the API routes, the RAG store, the MCP server, the
-   agent, and the React dashboard — works unchanged, since none of it knows
-   anything about "products" specifically; it only knows about records,
-   rules, and failures.
+1. Copy `quality_engine.js`, and replace the `rules` array with rules for your
+   new data (keep the same `{ ruleId, field, message, severity }` shape for
+   failures).
+2. Run `npm run build-kb` to rebuild the knowledge base doc — or write a new
+   `build-kb.js` if your domain needs different docs (an FAQ, a runbook, etc).
+3. Everything else — the API routes, the search system, the MCP server, the
+   agent, and the React dashboard — keeps working without changes, since none
+   of it actually knows anything about "products." It only knows about
+   records, rules, and failures.
