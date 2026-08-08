@@ -1,8 +1,7 @@
 # Product Quality Agent
 
 A validation pipeline + RAG knowledge base + grounded agent, applied to an e-commerce product feed.
-Stack: **Node.js/Express** backend, **React (Vite)** frontend — matching the
-role's tech stack — with GitLab CI/CD and Docker throughout.
+Stack: **Node.js/Express** backend, **React (Vite)** frontend, with GitLab CI/CD and Docker throughout.
 
 **Highlights:**
 - 🤖 **Agent-based workflow** — `agent.js` runs a real Anthropic tool-use
@@ -81,7 +80,8 @@ product-quality-agent/
 - `mcp_server.js` is a real MCP server over stdio — point Claude Desktop,
   Claude Code, or any other MCP client at it (`node src/mcp_server.js`) and
   it can call `validate_feed`, `search_knowledge_base`, and `get_rule_docs`
-  directly. This is the "MCP integrations" piece from the job spec.
+  directly. This is the piece that exposes the agent's tools to any
+  external MCP-compatible client, not just the bundled UI.
 - `agent.js` is the fast path used by the bundled React chat UI: by default
   it synthesizes an answer directly from `rag_store.js` retrieval results,
   no LLM call and no API key required. If `ANTHROPIC_API_KEY` is set, it
