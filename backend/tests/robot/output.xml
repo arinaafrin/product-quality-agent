@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.2 (Python 3.11.9 on win32)" generated="2026-08-26T21:46:36.379484" rpa="false" schemaversion="5">
+<suite id="s1" name="Api Tests" source="C:\xampp\htdocs\product-quality-agent\backend\tests\robot\api_tests.robot">
+<kw name="Wait For Backend And Create Session" type="SETUP">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.331247" level="INFO">Creating Session using : alias=api, url=http://localhost:4000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-08-26T21:46:37.330297" elapsed="0.000950"/>
+</kw>
+<kw name="Wait Until Keyword Succeeds" owner="BuiltIn">
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.385369" level="INFO">GET Request : url=http://localhost:4000/api/health 
+ path_url=/api/health 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-08-26T21:46:37.385369" level="INFO">GET Response : url=http://localhost:4000/api/health 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '36', 'ETag': 'W/"24-+hSzXWGeTYt8ZFPmrR+m38OU3OI"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"status":"ok","uptime":2986.281089} 
+ </msg>
+<arg>api</arg>
+<arg>/api/health</arg>
+<arg>expected_status=200</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.332326" elapsed="0.053043"/>
+</kw>
+<arg>${HEALTH_TIMEOUT}</arg>
+<arg>${HEALTH_RETRY}</arg>
+<arg>GET On Session</arg>
+<arg>api</arg>
+<arg>/api/health</arg>
+<arg>expected_status=200</arg>
+<doc>Runs the specified keyword and retries if it fails.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.331247" elapsed="0.054122"/>
+</kw>
+<doc>Polls /api/health before the suite starts, so tests fail
+with a clear "backend never came up" message instead of a confusing
+connection-refused error on the very first test case. Useful when
+the backend is still booting (e.g. right after `docker compose up`
+or a freshly started CI service container).</doc>
+<status status="PASS" start="2026-08-26T21:46:37.329243" elapsed="0.056126"/>
+</kw>
+<test id="s1-t1" name="Get Rules Returns Rule Metadata" line="16">
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.395480" level="INFO">GET Request : url=http://localhost:4000/api/rules 
+ path_url=/api/rules 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-08-26T21:46:37.395480" level="INFO">GET Response : url=http://localhost:4000/api/rules 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '2070', 'ETag': 'W/"816-KbI5T2QzMUR71qD73e/nDOQmCAo"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body=[{"id":"missing-title","title":"Missing product title","description":"Every record must have a non-empty `title`. Titles are used for search indexing, so a missing title makes the product invisible to customers even if it is otherwise valid.","severity":"error"},{"id":"invalid-price","title":"Missing or invalid price","description":"The `price` field must be present, numeric, and greater than 0. Negative, zero, or non-numeric prices are rejected outright because they would either break checkout or let an item be purchased for free.","severity":"error"},{"id":"invalid-currency","title":"Unsupported currency code","description":"The `currency` field must be one of: EUR, USD, GBP, SEK, DKK, NOK. Unsupported currencies are rejected because downstream pricing and tax logic does not have conversion rates configured for them.","severity":"error"},{"id":"broken-image","title":"Broken or malformed image URL","description":"The `imageUrl` must be a valid HTTPS URL ending in .jpg, .jpeg, .png, or .webp. This catches the most common feed error: a relative path, a http:// link, or a CDN URL that was truncated during export.","severity":"error"},{"id":"invalid-category","title":"Unrecognized category","description":"The `category` field should be one of: lighting, furniture, textiles, tableware, decor, outdoor, kids. This is a warning rather than a hard error because new categories are sometimes introduced ahead of the taxonomy being updated, but it should be reviewed.","severity":"warning"},{"id":"invalid-sku-format","title":"Malformed SKU","description":"A SKU must match the pattern `LETTERS-DIGITS` (2-5 letters, a dash, 3-8 digits), e.g. `FDS-10234`. Malformed SKUs cannot be matched against the warehouse system.","severity":"error"},{"id":"duplicate-sku","title":"Duplicate SKU within the same feed","description":"Each SKU must appear only once per feed. Duplicate SKUs usually mean the export job ran twice or two source systems disagree about the same product, and importing both would create a race condition on stock levels.","severity":"error"}] 
+ </msg>
+<msg time="2026-08-26T21:46:37.395480" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/rules</arg>
+<arg>expected_status=200</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.388090" elapsed="0.007390"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.396803" level="INFO">${rules} = [{'id': 'missing-title', 'title': 'Missing product title', 'description': 'Every record must have a non-empty `title`. Titles are used for search indexing, so a missing title makes the product invisib...</msg>
+<var>${rules}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.395480" elapsed="0.001323"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.396803" level="INFO">Length is 7.</msg>
+<arg>${rules}</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.396803" elapsed="0.000000"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${rules}[0]</arg>
+<arg>id</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.396803" elapsed="0.000000"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${rules}[0]</arg>
+<arg>severity</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.396803" elapsed="0.000000"/>
+</kw>
+<doc>/api/rules is a GET with no body, defined in routes/validate.js.
+Returns a list of {id, title, description, severity} objects.</doc>
+<tag>rules</tag>
+<tag>smoke</tag>
+<status status="PASS" start="2026-08-26T21:46:37.385369" elapsed="0.011434"/>
+</test>
+<test id="s1-t2" name="Validate Endpoint Accepts A Known-Good Feed" line="26">
+<kw name="Load JSON From File">
+<kw name="Get File" owner="OperatingSystem">
+<msg time="2026-08-26T21:46:37.396803" level="INFO" html="true">Getting file '&lt;a href="file://C:\xampp\htdocs\product-quality-agent\backend\tests\robot\sample_feed.json"&gt;C:\xampp\htdocs\product-quality-agent\backend\tests\robot\sample_feed.json&lt;/a&gt;'.</msg>
+<msg time="2026-08-26T21:46:37.404472" level="INFO">${content} = [
+  { "sku": "FDS-10234", "title": "Kaari Pendant Lamp", "price": 289, "currency": "EUR", "category": "lighting", "imageUrl": "https://cdn.fds.example/kaari-pendant.jpg" },
+  { "sku": "FDS-10235", "ti...</msg>
+<var>${content}</var>
+<arg>${path}</arg>
+<doc>Returns the contents of a specified file.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.396803" elapsed="0.007669"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.405501" level="INFO">${json} = [{'sku': 'FDS-10234', 'title': 'Kaari Pendant Lamp', 'price': 289, 'currency': 'EUR', 'category': 'lighting', 'imageUrl': 'https://cdn.fds.example/kaari-pendant.jpg'}, {'sku': 'FDS-10235', 'title': 'N...</msg>
+<var>${json}</var>
+<arg>json.loads('''${content}''')</arg>
+<arg>json</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.404472" elapsed="0.001029"/>
+</kw>
+<return>
+<value>${json}</value>
+<status status="PASS" start="2026-08-26T21:46:37.405501" elapsed="0.000000"/>
+</return>
+<msg time="2026-08-26T21:46:37.405501" level="INFO">${raw_feed} = [{'sku': 'FDS-10234', 'title': 'Kaari Pendant Lamp', 'price': 289, 'currency': 'EUR', 'category': 'lighting', 'imageUrl': 'https://cdn.fds.example/kaari-pendant.jpg'}, {'sku': 'FDS-10235', 'title': 'N...</msg>
+<var>${raw_feed}</var>
+<arg>${VALID_FEED_PATH}</arg>
+<status status="PASS" start="2026-08-26T21:46:37.396803" elapsed="0.008698"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.405501" level="INFO">${payload} = {'records': [{'sku': 'FDS-10234', 'title': 'Kaari Pendant Lamp', 'price': 289, 'currency': 'EUR', 'category': 'lighting', 'imageUrl': 'https://cdn.fds.example/kaari-pendant.jpg'}, {'sku': 'FDS-10235',...</msg>
+<var>${payload}</var>
+<arg>records=${raw_feed}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.405501" elapsed="0.000000"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.416411" level="INFO">POST Request : url=http://localhost:4000/api/validate 
+ path_url=/api/validate 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '1951', 'Content-Type': 'application/json'} 
+ body=b'{"records": [{"sku": "FDS-10234", "title": "Kaari Pendant Lamp", "price": 289, "currency": "EUR", "category": "lighting", "imageUrl": "https://cdn.fds.example/kaari-pendant.jpg"}, {"sku": "FDS-10235", "title": "Nord Oak Dining Chair", "price": 349, "currency": "EUR", "category": "furniture", "imageUrl": "https://cdn.fds.example/nord-chair.png"}, {"sku": "FDS-10236", "title": "", "price": 59, "currency": "EUR", "category": "textiles", "imageUrl": "https://cdn.fds.example/wool-throw.webp"}, {"sku": "FDS-10237", "title": "Ceramic Vase Duo", "price": -12, "currency": "EUR", "category": "decor", "imageUrl": "https://cdn.fds.example/vase-duo.jpg"}, {"sku": "FDS-10238", "title": "Birch Coffee Table", "price": 199, "currency": "RUB", "category": "furniture", "imageUrl": "https://cdn.fds.example/birch-table.jpg"}, {"sku": "FDS-10239", "title": "Linen Napkin Set", "price": 29, "currency": "EUR", "category": "tableware", "imageUrl": "cdn.fds.example/napkins.jpg"}, {"sku": "FDS-10240", "title": "Outdoor Teak Bench", "price": 459, "currency": "SEK", "category": "patio", "imageUrl": "https://cdn.fds.example/teak-bench.jpg"}, {"sku": "FDS10241", "title": "Kids Rocking Horse", "price": 89, "currency": "EUR", "category": "kids", "imageUrl": "https://cdn.fds.example/rocking-horse.png"}, {"sku": "FDS-10242", "title": "Glass Water Carafe", "price": 39, "currency": "EUR", "category": "tableware", "imageUrl": "https://cdn.fds.example/carafe.jpg"}, {"sku": "FDS-10242", "title": "Glass Water Carafe (re-export)", "price": 39, "currency": "EUR", "category": "tableware", "imageUrl": "https://cdn.fds.example/carafe.jpg"}, {"sku": "FDS-10243", "title": "Wool Area Rug 200x300", "price": 449, "currency": "EUR", "category": "textiles", "imageUrl": "https://cdn.fds.example/wool-rug.webp"}, {"sku": "FDS-10244", "title": "Table Lamp Aalto", "price": null, "currency": "EUR", "category": "lighting", "imageUrl": "https://cdn.fds.example/aalto-lamp.jpg"}]}' 
+ </msg>
+<msg time="2026-08-26T21:46:37.416411" level="INFO">POST Response : url=http://localhost:4000/api/validate 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '4165', 'ETag': 'W/"1045-HJISGY/y5iGLuCRAa6zysm7ZqAU"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"total":12,"passed":4,"rejected":8,"timestamp":"2026-08-26T18:46:37.411Z","results":[{"index":0,"sku":"FDS-10234","title":"Kaari Pendant Lamp","status":"passed","failures":[],"record":{"sku":"FDS-10234","title":"Kaari Pendant Lamp","price":289,"currency":"EUR","category":"lighting","imageUrl":"https://cdn.fds.example/kaari-pendant.jpg"}},{"index":1,"sku":"FDS-10235","title":"Nord Oak Dining Chair","status":"passed","failures":[],"record":{"sku":"FDS-10235","title":"Nord Oak Dining Chair","price":349,"currency":"EUR","category":"furniture","imageUrl":"https://cdn.fds.example/nord-chair.png"}},{"index":2,"sku":"FDS-10236","title":"","status":"rejected","failures":[{"ruleId":"missing-title","severity":"error","field":"title","message":"Title is missing or empty."}],"record":{"sku":"FDS-10236","title":"","price":59,"currency":"EUR","category":"textiles","imageUrl":"https://cdn.fds.example/wool-throw.webp"}},{"index":3,"sku":"FDS-10237","title":"Ceramic Vase Duo","status":"rejected","failures":[{"ruleId":"invalid-price","severity":"error","field":"price","message":"Price -12 must be greater than 0."}],"record":{"sku":"FDS-10237","title":"Ceramic Vase Duo","price":-12,"currency":"EUR","category":"decor","imageUrl":"https://cdn.fds.example/vase-duo.jpg"}},{"index":4,"sku":"FDS-10238","title":"Birch Coffee Table","status":"rejected","failures":[{"ruleId":"invalid-currency","severity":"error","field":"currency","message":"Currency \"RUB\" is not supported."}],"record":{"sku":"FDS-10238","title":"Birch Coffee Table","price":199,"currency":"RUB","category":"furniture","imageUrl":"https://cdn.fds.example/birch-table.jpg"}},{"index":5,"sku":"FDS-10239","title":"Linen Napkin Set","status":"rejected","failures":[{"ruleId":"broken-image","severity":"error","field":"imageUrl","message":"Image URL \"cdn.fds.example/napkins.jpg\" is not a valid https image link."}],"record":{"sku":"FDS-10239","title":"Linen Napkin Set","price":29,"currency":"EUR","category":"tableware","imageUrl":"cdn.fds.example/napkins.jpg"}},{"index":6,"sku":"FDS-10240","title":"Outdoor Teak Bench","status":"passed_with_warnings","failures":[{"ruleId":"invalid-category","severity":"warning","field":"category","message":"Category \"patio\" is not in the known taxonomy."}],"record":{"sku":"FDS-10240","title":"Outdoor Teak Bench","price":459,"currency":"SEK","category":"patio","imageUrl":"https://cdn.fds.example/teak-bench.jpg"}},{"index":7,"sku":"FDS10241","title":"Kids Rocking Horse","status":"rejected","failures":[{"ruleId":"invalid-sku-format","severity":"error","field":"sku","message":"SKU \"FDS10241\" does not match the required format."}],"record":{"sku":"FDS10241","title":"Kids Rocking Horse","price":89,"currency":"EUR","category":"kids","imageUrl":"https://cdn.fds.example/rocking-horse.png"}},{"index":8,"sku":"FDS-10242","title":"Glass Water Carafe","status":"rejected","failures":[{"ruleId":"duplicate-sku","severity":"error","field":"sku","message":"SKU \"FDS-10242\" appears 2 times in this feed."}],"record":{"sku":"FDS-10242","title":"Glass Water Carafe","price":39,"currency":"EUR","category":"tableware","imageUrl":"https://cdn.fds.example/carafe.jpg"}},{"index":9,"sku":"FDS-10242","title":"Glass Water Carafe (re-export)","status":"rejected","failures":[{"ruleId":"duplicate-sku","severity":"error","field":"sku","message":"SKU \"FDS-10242\" appears 2 times in this feed."}],"record":{"sku":"FDS-10242","title":"Glass Water Carafe (re-export)","price":39,"currency":"EUR","category":"tableware","imageUrl":"https://cdn.fds.example/carafe.jpg"}},{"index":10,"sku":"FDS-10243","title":"Wool Area Rug 200x300","status":"passed","failures":[],"record":{"sku":"FDS-10243","title":"Wool Area Rug 200x300","price":449,"currency":"EUR","category":"textiles","imageUrl":"https://cdn.fds.example/wool-rug.webp"}},{"index":11,"sku":"FDS-10244","title":"Table Lamp Aalto","status":"rejected","failures":[{"ruleId":"invalid-price","severity":"error","field":"price","message":"Price is missing."}],"record":{"sku":"FDS-10244","title":"Table Lamp Aalto","price":null,"currency":"EUR","category":"lighting","imageUrl":"https://cdn.fds.example/aalto-lamp.jpg"}}]} 
+ </msg>
+<msg time="2026-08-26T21:46:37.416411" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/validate</arg>
+<arg>json=${payload}</arg>
+<arg>expected_status=200</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.405501" elapsed="0.010910"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.416411" level="INFO">${body} = {'total': 12, 'passed': 4, 'rejected': 8, 'timestamp': '2026-08-26T18:46:37.411Z', 'results': [{'index': 0, 'sku': 'FDS-10234', 'title': 'Kaari Pendant Lamp', 'status': 'passed', 'failures': [], 'reco...</msg>
+<var>${body}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.416411" elapsed="0.000000"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${body}</arg>
+<arg>total</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.416411" elapsed="0.000000"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${body}</arg>
+<arg>results</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.416411" elapsed="0.000000"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${body}[total] == len(${raw_feed})</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.416411" elapsed="0.008084"/>
+</kw>
+<doc>/api/validate requires the body wrapped as {"records": [...]},
+NOT a bare array. The bundled sample_feed.json is a raw array on disk,
+so it must be wrapped here before sending.</doc>
+<tag>smoke</tag>
+<tag>validate</tag>
+<status status="PASS" start="2026-08-26T21:46:37.396803" elapsed="0.027692"/>
+</test>
+<test id="s1-t3" name="Validate Endpoint Rejects A Record With Missing Title" line="39">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.427675" level="INFO">${bad_record} = {'sku': 'TEST-001', 'price': '19.99', 'currency': 'EUR', 'category': 'lighting', 'imageUrl': 'https://via.placeholder.com/150'}</msg>
+<var>${bad_record}</var>
+<arg>sku=TEST-001</arg>
+<arg>price=19.99</arg>
+<arg>currency=EUR</arg>
+<arg>category=lighting</arg>
+<arg>imageUrl=https://via.placeholder.com/150</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.426751" elapsed="0.000924"/>
+</kw>
+<kw name="Create List" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.427675" level="INFO">${feed} = [{'sku': 'TEST-001', 'price': '19.99', 'currency': 'EUR', 'category': 'lighting', 'imageUrl': 'https://via.placeholder.com/150'}]</msg>
+<var>${feed}</var>
+<arg>${bad_record}</arg>
+<doc>Returns a list containing given items.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.427675" elapsed="0.000000"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.427675" level="INFO">${payload} = {'records': [{'sku': 'TEST-001', 'price': '19.99', 'currency': 'EUR', 'category': 'lighting', 'imageUrl': 'https://via.placeholder.com/150'}]}</msg>
+<var>${payload}</var>
+<arg>records=${feed}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.427675" elapsed="0.000000"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.436474" level="INFO">POST Request : url=http://localhost:4000/api/validate 
+ path_url=/api/validate 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '142', 'Content-Type': 'application/json'} 
+ body=b'{"records": [{"sku": "TEST-001", "price": "19.99", "currency": "EUR", "category": "lighting", "imageUrl": "https://via.placeholder.com/150"}]}' 
+ </msg>
+<msg time="2026-08-26T21:46:37.436474" level="INFO">POST Response : url=http://localhost:4000/api/validate 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '545', 'ETag': 'W/"221-2VFvliodsSZWvyj+0CTrKnZX9+w"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"total":1,"passed":0,"rejected":1,"timestamp":"2026-08-26T18:46:37.430Z","results":[{"index":0,"sku":"TEST-001","title":null,"status":"rejected","failures":[{"ruleId":"missing-title","severity":"error","field":"title","message":"Title is missing or empty."},{"ruleId":"broken-image","severity":"error","field":"imageUrl","message":"Image URL \"https://via.placeholder.com/150\" is not a valid https image link."}],"record":{"sku":"TEST-001","price":"19.99","currency":"EUR","category":"lighting","imageUrl":"https://via.placeholder.com/150"}}]} 
+ </msg>
+<msg time="2026-08-26T21:46:37.436474" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/validate</arg>
+<arg>json=${payload}</arg>
+<arg>expected_status=200</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.427675" elapsed="0.008799"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.439128" level="INFO">${body} = {'total': 1, 'passed': 0, 'rejected': 1, 'timestamp': '2026-08-26T18:46:37.430Z', 'results': [{'index': 0, 'sku': 'TEST-001', 'title': None, 'status': 'rejected', 'failures': [{'ruleId': 'missing-titl...</msg>
+<var>${body}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.436474" elapsed="0.002654"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.439128" level="INFO">${result} = {'index': 0, 'sku': 'TEST-001', 'title': None, 'status': 'rejected', 'failures': [{'ruleId': 'missing-title', 'severity': 'error', 'field': 'title', 'message': 'Title is missing or empty.'}, {'ruleId'...</msg>
+<var>${result}</var>
+<arg>${body}[results][0]</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.439128" elapsed="0.000000"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${result}[status]</arg>
+<arg>rejected</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.439128" elapsed="0.000000"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.445266" level="INFO">${failure_ids} = ['missing-title', 'broken-image']</msg>
+<var>${failure_ids}</var>
+<arg>[f['ruleId'] for f in $result['failures']]</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.439128" elapsed="0.006138"/>
+</kw>
+<kw name="List Should Contain Value" owner="Collections">
+<arg>${failure_ids}</arg>
+<arg>missing-title</arg>
+<doc>Fails if the ``value`` is not found from ``list``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.445266" elapsed="0.001980"/>
+</kw>
+<doc>A record with no title should come back with status "rejected"
+and a failure entry with ruleId "missing-title".</doc>
+<tag>validate</tag>
+<status status="PASS" start="2026-08-26T21:46:37.425517" elapsed="0.021729"/>
+</test>
+<test id="s1-t4" name="Validate Endpoint Rejects An Unsupported Currency" line="54">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.449084" level="INFO">${bad_record} = {'sku': 'TEST-002', 'title': 'Test Lamp', 'price': '49.99', 'currency': 'XYZ', 'category': 'lighting', 'imageUrl': 'https://via.placeholder.com/150'}</msg>
+<var>${bad_record}</var>
+<arg>sku=TEST-002</arg>
+<arg>title=Test Lamp</arg>
+<arg>price=49.99</arg>
+<arg>currency=XYZ</arg>
+<arg>category=lighting</arg>
+<arg>imageUrl=https://via.placeholder.com/150</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.449084" elapsed="0.000000"/>
+</kw>
+<kw name="Create List" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.449084" level="INFO">${feed} = [{'sku': 'TEST-002', 'title': 'Test Lamp', 'price': '49.99', 'currency': 'XYZ', 'category': 'lighting', 'imageUrl': 'https://via.placeholder.com/150'}]</msg>
+<var>${feed}</var>
+<arg>${bad_record}</arg>
+<doc>Returns a list containing given items.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.449084" elapsed="0.000000"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.449084" level="INFO">${payload} = {'records': [{'sku': 'TEST-002', 'title': 'Test Lamp', 'price': '49.99', 'currency': 'XYZ', 'category': 'lighting', 'imageUrl': 'https://via.placeholder.com/150'}]}</msg>
+<var>${payload}</var>
+<arg>records=${feed}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.449084" elapsed="0.000000"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.456822" level="INFO">POST Request : url=http://localhost:4000/api/validate 
+ path_url=/api/validate 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '164', 'Content-Type': 'application/json'} 
+ body=b'{"records": [{"sku": "TEST-002", "title": "Test Lamp", "price": "49.99", "currency": "XYZ", "category": "lighting", "imageUrl": "https://via.placeholder.com/150"}]}' 
+ </msg>
+<msg time="2026-08-26T21:46:37.456822" level="INFO">POST Response : url=http://localhost:4000/api/validate 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '586', 'ETag': 'W/"24a-mqKJiPa6oD2Z9My2owUNQHQcoEA"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"total":1,"passed":0,"rejected":1,"timestamp":"2026-08-26T18:46:37.451Z","results":[{"index":0,"sku":"TEST-002","title":"Test Lamp","status":"rejected","failures":[{"ruleId":"invalid-currency","severity":"error","field":"currency","message":"Currency \"XYZ\" is not supported."},{"ruleId":"broken-image","severity":"error","field":"imageUrl","message":"Image URL \"https://via.placeholder.com/150\" is not a valid https image link."}],"record":{"sku":"TEST-002","title":"Test Lamp","price":"49.99","currency":"XYZ","category":"lighting","imageUrl":"https://via.placeholder.com/150"}}]} 
+ </msg>
+<msg time="2026-08-26T21:46:37.456822" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/validate</arg>
+<arg>json=${payload}</arg>
+<arg>expected_status=200</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.449084" elapsed="0.007738"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.456822" level="INFO">${body} = {'total': 1, 'passed': 0, 'rejected': 1, 'timestamp': '2026-08-26T18:46:37.451Z', 'results': [{'index': 0, 'sku': 'TEST-002', 'title': 'Test Lamp', 'status': 'rejected', 'failures': [{'ruleId': 'inval...</msg>
+<var>${body}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.456822" elapsed="0.000000"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.461215" level="INFO">${result} = {'index': 0, 'sku': 'TEST-002', 'title': 'Test Lamp', 'status': 'rejected', 'failures': [{'ruleId': 'invalid-currency', 'severity': 'error', 'field': 'currency', 'message': 'Currency "XYZ" is not supp...</msg>
+<var>${result}</var>
+<arg>${body}[results][0]</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.460202" elapsed="0.001013"/>
+</kw>
+<kw name="Evaluate" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.461215" level="INFO">${failure_ids} = ['invalid-currency', 'broken-image']</msg>
+<var>${failure_ids}</var>
+<arg>[f['ruleId'] for f in $result['failures']]</arg>
+<doc>Evaluates the given expression in Python and returns the result.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.461215" elapsed="0.000000"/>
+</kw>
+<kw name="List Should Contain Value" owner="Collections">
+<arg>${failure_ids}</arg>
+<arg>invalid-currency</arg>
+<doc>Fails if the ``value`` is not found from ``list``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.461215" elapsed="0.003084"/>
+</kw>
+<doc>Checks the invalid-currency rule (allowed set is
+EUR, USD, GBP, SEK, DKK, NOK per quality_engine.js) actually fires.</doc>
+<tag>validate</tag>
+<status status="PASS" start="2026-08-26T21:46:37.449084" elapsed="0.015215"/>
+</test>
+<test id="s1-t5" name="Validate Endpoint Rejects Malformed Request Body" line="68">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.466469" level="INFO">${bad_record} = {'sku': 'TEST-003', 'title': 'Test', 'price': '10', 'currency': 'EUR'}</msg>
+<var>${bad_record}</var>
+<arg>sku=TEST-003</arg>
+<arg>title=Test</arg>
+<arg>price=10</arg>
+<arg>currency=EUR</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.465937" elapsed="0.000532"/>
+</kw>
+<kw name="Create List" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.467015" level="INFO">${bare_array} = [{'sku': 'TEST-003', 'title': 'Test', 'price': '10', 'currency': 'EUR'}]</msg>
+<var>${bare_array}</var>
+<arg>${bad_record}</arg>
+<doc>Returns a list containing given items.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.467015" elapsed="0.000000"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.474365" level="INFO">POST Request : url=http://localhost:4000/api/validate 
+ path_url=/api/validate 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '72', 'Content-Type': 'application/json'} 
+ body=b'[{"sku": "TEST-003", "title": "Test", "price": "10", "currency": "EUR"}]' 
+ </msg>
+<msg time="2026-08-26T21:46:37.474365" level="INFO">POST Response : url=http://localhost:4000/api/validate 
+ status=400, reason=Bad Request 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '55', 'ETag': 'W/"37-UGMBO8Y+2m8SQ/LWAniyOyzurfY"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"error":"Request body must be { \"records\": [...] }"} 
+ </msg>
+<msg time="2026-08-26T21:46:37.474365" level="INFO">${response} = &lt;Response [400]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/validate</arg>
+<arg>json=${bare_array}</arg>
+<arg>expected_status=400</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.467015" elapsed="0.007350"/>
+</kw>
+<doc>Sending a bare array instead of {"records": [...]} should
+return 400, per the explicit check in routes/validate.js.</doc>
+<tag>negative</tag>
+<tag>validate</tag>
+<status status="PASS" start="2026-08-26T21:46:37.465339" elapsed="0.009026"/>
+</test>
+<test id="s1-t6" name="Validate Endpoint Handles An Empty Feed Gracefully" line="76">
+<kw name="Create List" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.475390" level="INFO">${empty_feed} = []</msg>
+<var>${empty_feed}</var>
+<doc>Returns a list containing given items.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.475390" elapsed="0.000000"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.476776" level="INFO">${payload} = {'records': []}</msg>
+<var>${payload}</var>
+<arg>records=${empty_feed}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.476776" elapsed="0.000000"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.484411" level="INFO">POST Request : url=http://localhost:4000/api/validate 
+ path_url=/api/validate 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '15', 'Content-Type': 'application/json'} 
+ body=b'{"records": []}' 
+ </msg>
+<msg time="2026-08-26T21:46:37.484411" level="INFO">POST Response : url=http://localhost:4000/api/validate 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '87', 'ETag': 'W/"57-RsjC5QfWqF1QyjdhtTp5f7OKqBw"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"total":0,"passed":0,"rejected":0,"timestamp":"2026-08-26T18:46:37.479Z","results":[]} 
+ </msg>
+<msg time="2026-08-26T21:46:37.485443" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/validate</arg>
+<arg>json=${payload}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.477809" elapsed="0.007634"/>
+</kw>
+<kw name="Should Not Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.485443" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>500</arg>
+<doc>Fails if objects are equal after converting them to integers.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.485443" elapsed="0.000000"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.485443" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.485443" elapsed="0.000000"/>
+</kw>
+<doc>Negative test: sends an empty records list and checks the API
+doesn't crash (no 500).</doc>
+<tag>negative</tag>
+<tag>validate</tag>
+<status status="PASS" start="2026-08-26T21:46:37.475390" elapsed="0.010053"/>
+</test>
+<test id="s1-t7" name="Ask Endpoint Answers A Grounded Question" line="86">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.485443" level="INFO">${payload} = {'question': 'Why does an unsupported currency get rejected?'}</msg>
+<var>${payload}</var>
+<arg>question=Why does an unsupported currency get rejected?</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.485443" elapsed="0.000000"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.518175" level="INFO">POST Request : url=http://localhost:4000/api/ask 
+ path_url=/api/ask 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '62', 'Content-Type': 'application/json'} 
+ body=b'{"question": "Why does an unsupported currency get rejected?"}' 
+ </msg>
+<msg time="2026-08-26T21:46:37.518175" level="INFO">POST Response : url=http://localhost:4000/api/ask 
+ status=200, reason=OK 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '4580', 'ETag': 'W/"11e4-yijB1BwSKtFw6Rd9Hvde85u++kM"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"answer":"From validation-rules.md: Unsupported currency code (\"invalid-currency\") Severity: error The \"currency\" field must be one of: EUR, USD, GBP, SEK, DKK, NOK. Unsupported currencies are rejected because downstream pricing and tax logic does not have conversion rates configured for them.\n\nFrom the validation run log: Validation run 2026-08-26T18:07:27.405Z Total records: 1. Passed: 0. Rejected: 1. Rule \"invalid-currency\" failed 1 time(s). Examples: TEST-002 (Test Lamp): Currency \"XYZ\" is not supported.\n\nFrom the validation run log: Validation run 2026-08-26T18:08:28.425Z Total records: 1. Passed: 0. Rejected: 1. Rule \"invalid-currency\" failed 1 time(s). Examples: TEST-002 (Test Lamp): Currency \"XYZ\" is not supported.","toolCalls":[{"name":"search_knowledge_base","input":{"query":"Why does an unsupported currency get rejected?"},"result":[{"id":"kb:validation-rules.md:3","source":"validation-rules.md","type":"knowledge_base","text":"## Unsupported currency code (`invalid-currency`)\r\n\r\n**Severity:** error\r\n\r\nThe `currency` field must be one of: EUR, USD, GBP, SEK, DKK, NOK. Unsupported currencies are rejected because downstream pricing and tax logic does not have conversion rates configured for them.","score":0.3286245603497499},{"id":"run:2026-08-26T18:07:27.405Z","source":"validation_run","type":"validation_log","text":"## Validation run 2026-08-26T18:07:27.405Z\nTotal records: 1. Passed: 0. Rejected: 1.\nRule \"invalid-currency\" failed 1 time(s). Examples: TEST-002 (Test Lamp): Currency \"XYZ\" is not supported.","score":0.11811539298486749},{"id":"run:2026-08-26T18:08:28.425Z","source":"validation_run","type":"validation_log","text":"## Validation run 2026-08-26T18:08:28.425Z\nTotal records: 1. Passed: 0. Rejected: 1.\nRule \"invalid-currency\" failed 1 time(s). Examples: TEST-002 (Test Lamp): Currency \"XYZ\" is not supported.","score":0.11672262081557157},{"id":"kb:faq.md:0","source":"faq.md","type":"knowledge_base","text":"# Operations FAQ — Product feed validation\r\n\r\n### Where does the product feed come from?\r\nThe nightly feed is exported from the PIM (product information management) system\r\nand dropped for ingestion. Each run produces one JSON array of product records.\r\n\r\n### What happens to a rejected record?\r\nRecords with at least one `error`-severity failure are excluded from the import\r\nand written to the failure log with the reason(s). They are **not** silently\r\ndropped — the catalog team can see every rejection and its cause in the\r\ndashboard, and can fix the source data and re-run the import.\r\n\r\n### What is the difference between \"rejected\" and \"passed with warnings\"?\r\n- **rejected**: at least one `error`-severity rule failed. The record does not\r\n  get imported.\r\n- **passed_with_warnings**: only `warning`-severity rules failed (currently\r\n  only `invalid-category`). The record is imported, but flagged for review,\r\n  because warnings usually indicate the taxonomy is out of date rather than\r\n  bad data.\r\n\r\n### Why did an import reject a lot of records at once?\r\nIn practice this is almost always one of three things:\r\n1. A source system change (e.g. the PIM started exporting currency codes in\r\n   a new format, or image URLs without the `https://` prefix), which shows up\r\n   as many records failing the *same* rule.\r\n2. A partial re-export, which shows up as `duplicate-sku` failures because\r\n   the same SKUs appear twice in one feed.\r\n3. A genuinely bad batch of new products entered without required fields.\r\n\r\nWhen triaging, group failures by `ruleId` first — if 90% of failures are the\r\nsame rule, look for a systemic cause before treating it as 40 separate\r\ndata-entry mistakes.\r\n\r\n### Can a rule be relaxed for a specific brand or supplier?\r\nNot by editing the feed. Rule exceptions are configured in\r\n`quality_engine.js` behind an allow-list, since the rules exist to protect\r\ndownstream systems (checkout, warehouse, search), not just to gate-keep\r\nformatting.","score":0.08770134397585222},{"id":"run:2026-08-26T18:46:37.451Z","source":"validation_run","type":"validation_log","text":"## Validation run 2026-08-26T18:46:37.451Z\nTotal records: 1. Passed: 0. Rejected: 1.\nRule \"invalid-currency\" failed 1 time(s). Examples: TEST-002 (Test Lamp): Currency \"XYZ\" is not supported.\nRule \"broken-image\" failed 1 time(s). Examples: TEST-002 (Test Lamp): Image URL \"https://via.placeholder.com/150\" is not a valid https image link.","score":0.06984679134472142}]}],"mode":"offline"} 
+ </msg>
+<msg time="2026-08-26T21:46:37.518634" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/ask</arg>
+<arg>json=${payload}</arg>
+<arg>expected_status=200</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.485443" elapsed="0.033191"/>
+</kw>
+<kw name="Should Not Be Empty" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.520906" level="INFO">Length is 3.</msg>
+<arg>${response.json()}</arg>
+<doc>Verifies that the given item is not empty.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.518634" elapsed="0.002272"/>
+</kw>
+<doc>/api/ask expects {"question": "..."} (routes/ask.js).
+Works with zero configuration / no API key (offline RAG synthesis).</doc>
+<tag>ask</tag>
+<tag>smoke</tag>
+<status status="PASS" start="2026-08-26T21:46:37.485443" elapsed="0.035836"/>
+</test>
+<test id="s1-t8" name="Ask Endpoint Rejects Missing Question Field" line="94">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-08-26T21:46:37.523380" level="INFO">${payload} = {'notAQuestion': 'hello'}</msg>
+<var>${payload}</var>
+<arg>notAQuestion=hello</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.522343" elapsed="0.001037"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-08-26T21:46:37.527815" level="INFO">POST Request : url=http://localhost:4000/api/ask 
+ path_url=/api/ask 
+ headers={'User-Agent': 'python-requests/2.32.3', 'Accept-Encoding': 'gzip, deflate, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '25', 'Content-Type': 'application/json'} 
+ body=b'{"notAQuestion": "hello"}' 
+ </msg>
+<msg time="2026-08-26T21:46:37.527815" level="INFO">POST Response : url=http://localhost:4000/api/ask 
+ status=400, reason=Bad Request 
+ headers={'X-Powered-By': 'Express', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': '58', 'ETag': 'W/"3a-K3f1RqUPQgQNmlGsI/7ewwocZ68"', 'Date': 'Wed, 26 Aug 2026 18:46:37 GMT', 'Connection': 'keep-alive', 'Keep-Alive': 'timeout=5'} 
+ body={"error":"Request body must be { \"question\": \"...\" }"} 
+ </msg>
+<msg time="2026-08-26T21:46:37.527815" level="INFO">${response} = &lt;Response [400]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api/ask</arg>
+<arg>json=${payload}</arg>
+<arg>expected_status=400</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-08-26T21:46:37.523380" elapsed="0.004435"/>
+</kw>
+<doc>routes/ask.js explicitly 400s when "question" is missing or not a string.</doc>
+<tag>ask</tag>
+<tag>negative</tag>
+<status status="PASS" start="2026-08-26T21:46:37.521279" elapsed="0.006536"/>
+</test>
+<status status="PASS" start="2026-08-26T21:46:36.384483" elapsed="1.143332"/>
+</suite>
+<statistics>
+<total>
+<stat pass="8" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+<stat pass="2" fail="0" skip="0">ask</stat>
+<stat pass="3" fail="0" skip="0">negative</stat>
+<stat pass="1" fail="0" skip="0">rules</stat>
+<stat pass="3" fail="0" skip="0">smoke</stat>
+<stat pass="5" fail="0" skip="0">validate</stat>
+</tag>
+<suite>
+<stat name="Api Tests" id="s1" pass="8" fail="0" skip="0">Api Tests</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

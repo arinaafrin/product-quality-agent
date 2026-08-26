@@ -68,6 +68,33 @@ test:backend:
     paths:
       - backend/coverage/
 
+test:api-robot:
+  stage: test
+  image: $NODE_IMAGE
+  variables: { DIR: backend }
+  <<: *node_cache
+  script:
+    # node:alpine has no python — install it for Robot Framework
+    - apk add --no-cache python3 py3-pip
+    - cd backend && npm ci --no-audit --no-fund
+    # Start the backend in the background; the suite's own health-check
+    # wait (see Suite Setup in api_tests.robot) handles startup timing,
+    # so no manual sleep is needed here.
+    - npm run dev &
+    - cd tests/robot
+    - pip3 install --no-cache-dir --break-system-packages robotframework robotframework-requests
+    - robot api_tests.robot
+  artifacts:
+    when: always
+    paths:
+      - backend/tests/robot/log.html
+      - backend/tests/robot/report.html
+      - backend/tests/robot/output.xml
+    expire_in: 1 week
+  # Runs the real backend directly (no Docker image needed), so this job
+  # works even on the very first pipeline run before any image has been
+  # built and pushed to the registry.
+
 build-check:frontend:
   stage: test
   image: $NODE_IMAGE
@@ -122,7 +149,7 @@ deploy:staging:
     - if: '$CI_COMMIT_BRANCH == "main"'
   script:
     - echo "Deploying $BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA and $FRONTEND_IMAGE:$CI_COMMIT_SHORT_SHA to staging"
-    - echo "Replace this with: az containerapp update / kubectl apply / UpCloud API call"
+    - echo "Replace this with:az containerapp update / kubectl apply / UpCloud API call"
 
 deploy:production:
   stage: deploy
@@ -135,4 +162,4 @@ deploy:production:
       when: manual
   script:
     - echo "Deploying $BACKEND_IMAGE:$CI_COMMIT_TAG and $FRONTEND_IMAGE:$CI_COMMIT_TAG to production"
-    - echo "Replace this with: az containerapp update / kubectl apply / UpCloud API call"
+    - echo "Replace this with:az containerapp update / kubectl apply / UpCloud API call"
