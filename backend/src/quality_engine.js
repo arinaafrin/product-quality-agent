@@ -1,16 +1,3 @@
-/**
- * quality_engine.js
- * ------------------
- * Domain logic for validating incoming e-commerce product feed records.
- * This is the ONLY file you need to swap out to point this project at a
- * different data type (orders, IoT telemetry, log lines, ...). Everything
- * else (rag_store.js, mcp_server.js, agent.js, the API routes and the
- * React UI) just calls whatever validate() and the rule metadata expose.
- *
- * Each rule returns either `null` (record passes) or a `Failure` object:
- *   { ruleId, field, message, severity }
- */
-
 const VALID_CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'SEK', 'DKK', 'NOK']);
 const VALID_CATEGORIES = new Set([
   'lighting',
@@ -158,7 +145,6 @@ const rules = [
       'Each SKU must appear only once per feed. Duplicate SKUs usually mean the export job ' +
       'ran twice or two source systems disagree about the same product, and importing both ' +
       'would create a race condition on stock levels.',
-    // duplicate-sku is a cross-record rule, handled separately in validateFeed()
     check() {
       return null;
     },
@@ -166,8 +152,6 @@ const rules = [
 ];
 
 /**
- * Validate a single record against every per-record rule (excludes cross-record
- * rules like duplicate-sku, which need the whole feed).
  * @param {object} record
  * @returns {Failure[]}
  */
@@ -184,12 +168,14 @@ function validateRecord(record) {
 }
 
 /**
- * Validate an entire feed (array of records). Runs per-record rules plus
- * cross-record rules (currently: duplicate SKU detection).
  * @param {object[]} records
  * @returns {{ total: number, passed: number, rejected: number, results: Array }}
  */
-function validateFeed(records) {
+/**
+ * @param {Array<Object>} records
+ * @param {(result: Object, index: number, total: number) => void} [onRecord]
+ */
+function validateFeed(records, onRecord) {
   const skuCounts = new Map();
   for (const r of records) {
     if (r.sku) skuCounts.set(r.sku, (skuCounts.get(r.sku) || 0) + 1);
@@ -206,7 +192,7 @@ function validateFeed(records) {
       });
     }
     const hasError = failures.some((f) => f.severity === 'error');
-    return {
+    const result = {
       index,
       sku: record.sku ?? null,
       title: record.title ?? null,
@@ -214,6 +200,10 @@ function validateFeed(records) {
       failures,
       record,
     };
+    if (typeof onRecord === 'function') {
+      onRecord(result, index, records.length);
+    }
+    return result;
   });
 
   const rejected = results.filter((r) => r.status === 'rejected').length;
@@ -228,7 +218,6 @@ function validateFeed(records) {
   };
 }
 
-/** Rule metadata without the `check` function, for building the knowledge base / UI. */
 function getRuleDocs() {
   return rules.map(({ id, title, description, severity }) => ({ id, title, description, severity }));
 }

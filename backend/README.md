@@ -1,153 +1,155 @@
-# TimeCapsule — Backend (Python / Django)
+# Product Quality Agent
 
-This is the backend for TimeCapsule. It was moved from **PHP (Laravel)** to
-**Python (Django + Django REST Framework)**, using a standard, production-ready
-folder layout.
+A tool that checks product data, stores knowledge about the rules, and lets you ask questions about the results. Built on an e-commerce product feed as the example use case.
+Stack: **Node.js/Express** backend, **React (Vite)** frontend, **Socket.IO + Redis** for live progress, with GitLab CI/CD and Docker.
 
-It gives people an API to explore AI-made "time travel" experiences: pick a
-city and a year, and the app shows a story and images of what that place may
-have looked like back then.
+**What's inside:**
+- 🤖 **Agent** — `agent.js` runs an Anthropic tool-use loop (`search_knowledge_base`), with offline fallback if no API key is set or a call fails.
+- 🔌 **MCP support** — `mcp_server.js` exposes the same tools over MCP for Claude Desktop, Claude Code, or any MCP client.
+- 📚 **RAG search** — `rag_store.js` is a TF-IDF search over rule docs and past validation runs (swappable for pgvector/Pinecone/Qdrant later).
+- ⚡ **Real-time progress** — `realtime.js` attaches Socket.IO to the backend, backed by a Redis pub/sub adapter (`@socket.io/redis-adapter`), so a validation run streams per-record progress to the browser as it happens instead of the client waiting on one large response. The Redis adapter is what would let this fan out across multiple backend instances in production, not just a single process.
+- ✅ **Tested** — 62 Jest/Vitest unit tests (~93% backend coverage) + 8 Robot Framework API tests against the real running app, all run in CI.
 
-## What this app does
+> Only `backend/src/quality_engine.js` knows about "products." Swap it for a different data type (orders, sensor logs, CSV) and everything else — routes, search, MCP, agent, UI, and the real-time layer — keeps working.
 
-- People can sign up, log in, or sign in with Google.
-- People can look at cities and past "experiences" (a city + a year + a
-  story).
-- Partners and admins can create new experiences and ask the AI to write a
-  story or make an image for them (this happens in the background, so the
-  app stays fast).
-- Admins can check new experiences before they go live (this is called
-  "moderation").
-- People can save their favorite experiences.
-- Partner groups (like museums) can be verified by an admin.
-- Several experiences can be grouped into a "Journey" (a themed walking
-  tour), each stop reusing the same experience + AI generation pipeline.
+## What it does
 
-## How the project is organized
+1. **Checks your data** — upload a JSON product feed, get each item checked against 7 rules (missing title, bad price, unsupported currency, broken image link, unknown category, bad SKU format, duplicate SKU), with a pass/warn/reject result and reason.
+2. **Explains why** — each rule has a short write-up, plus a FAQ, indexed by a built-in TF-IDF search (no external DB or API key needed).
+3. **Answers your questions** — ask things like *"why did today's import reject 40 items?"*. Works with no API key (offline search + synthesis); add `ANTHROPIC_API_KEY` to upgrade to a natural-language answer, with automatic fallback.
+
+## How it's put together
 
 ```
-timecapsule/
-├── manage.py                  # the main command you run to start/manage the app
-├── requirements/               # lists of Python packages the app needs
-│   ├── base.txt                 # packages needed everywhere
-│   ├── dev.txt                  # + testing and debugging tools (local computer only)
-│   └── production.txt           # + tools needed on the live server
-├── .env.example                 # example list of secret settings (copy to .env)
-├── pytest.ini                   # settings for running automated tests
-├── Dockerfile                   # instructions to build the app into a container
-├── docker-compose.yml            # starts the app + database + cache on your computer
-├── docker-compose.prod.yml       # extra settings used only on the live server
-├── gunicorn.conf.py               # settings for the production web server
-│
-├── config/                      # the app's central control room
-│   ├── settings/
-│   │   ├── base.py               # settings shared by every environment
-│   │   ├── development.py        # settings used on your own computer
-│   │   ├── production.py         # settings used on the live server
-│   │   └── test.py               # settings used while running tests
-│   ├── urls.py                   # the main map of every web address (URL)
-│   ├── celery.py                 # sets up background/queued jobs
-│   ├── wsgi.py / asgi.py         # how the web server talks to Django
-│
-├── apps/                        # the actual features, one folder per topic
-│   ├── accounts/                  # sign up, log in, Google login, user roles
-│   ├── cities/                    # the City model (name, country, map position)
-│   ├── experiences/                # the main feature: Experience + MediaAsset + Favorite
-│   ├── ai_generation/               # asks the AI to write stories / make images
-│   ├── moderation/                  # admin review: approve / reject / comment
-│   ├── journeys/                     # a themed group of experiences (a "tour")
-│   ├── partners/                     # museums/organizations and their verification
-│   └── common/                        # small shared building blocks used by every app
-│
-├── .github/workflows/ci.yml      # runs checks and tests every time code changes
-└── scripts/entrypoint.sh          # waits for the database, then starts the app
+product-quality-agent/
+├── .gitlab-ci.yml          # lint → test → build (docker) → deploy
+├── docker-compose.yml
+├── backend/
+│   ├── src/
+│   │   ├── quality_engine.js   # <- swap this for a new data type
+│   │   ├── rag_store.js
+│   │   ├── mcp_server.js
+│   │   ├── agent.js
+│   │   ├── realtime.js         # Socket.IO server + Redis pub/sub adapter
+│   │   ├── server.js
+│   │   ├── routes/             # /api/validate, /api/rules, /api/ask
+│   │   └── data/
+│   │       ├── sample_feed.json
+│   │       └── knowledge_base/
+│   ├── scripts/build-kb.js
+│   └── tests/
+│       ├── ...                 # 36 Jest tests, ~93% statement coverage
+│       └── robot/              # 8 Robot Framework API tests
+│           ├── api_tests.robot
+│           └── sample_feed.json
+└── frontend/
+    └── src/
+        ├── App.jsx
+        ├── components/
+        │   ├── Dashboard.jsx
+        │   ├── ManifestStrip.jsx
+        │   ├── FailureTable.jsx
+        │   ├── RulesView.jsx
+        │   └── AgentChat.jsx
+        ├── styles/index.css
+        └── *.test.js(x)        # 26 Vitest + Testing Library tests
 ```
 
-Each app folder under `apps/` follows the same pattern:
+### Why two agent files (`mcp_server.js` vs `agent.js`)?
 
-| File             | What it holds                                             |
-|-------------------|------------------------------------------------------------|
-| `models.py`       | The shape of the data (like a spreadsheet's columns)        |
-| `serializers.py`  | Turns that data into JSON for the API, and back             |
-| `views.py`        | What happens when someone calls an API address              |
-| `urls.py`         | Which address points to which view                          |
-| `permissions.py`  | Who is allowed to do what (visitor / partner / admin)       |
-| `admin.py`        | Lets staff manage the data from a web page (`/admin`)       |
-| `tasks.py`        | Work that runs in the background (only in `ai_generation`)  |
-| `tests/`          | Automated checks that make sure the code still works         |
+- `mcp_server.js` — real MCP server over stdio, for external clients (Claude Desktop, Claude Code, etc).
+- `agent.js` — powers the in-app chat. Same underlying `rag_store.js`, but built for the React UI's request/response flow rather than MCP's tool-call protocol.
 
-## Getting started (with Docker — recommended)
+## Running it locally
 
-1. Copy the example settings file:
-   ```
-   cp .env.example .env
-   ```
-2. Start everything (web app, database, cache, background worker):
-   ```
-   docker compose up --build
-   ```
-3. Open http://localhost:8000/api/v1/ping — you should see `{"status": "ok"}`.
-4. Open http://localhost:8000/api/docs — interactive API documentation.
+```bash
+# Redis (required for real-time progress; the app still runs without it —
+# see "Real-time validation progress" below — but you'll only get the
+# plain request/response flow)
+docker run -p 6379:6379 redis:7-alpine
 
-## Getting started (without Docker)
+# Backend
+cd backend
+cp .env.example .env        # ANTHROPIC_API_KEY optional, REDIS_URL defaults to localhost:6379
+npm install
+npm run dev                 # http://localhost:4000
 
-1. Create a virtual environment and install packages:
-   ```
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements/dev.txt
-   ```
-2. Copy `.env.example` to `.env` and point `DATABASE_URL` at your own
-   Postgres database.
-3. Set up the database tables:
-   ```
-   python manage.py migrate
-   ```
-4. Start the app:
-   ```
-   python manage.py runserver
-   ```
-
-## Running tests
-
-```
-pytest
+# Frontend
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173 (proxies /api to :4000)
 ```
 
-## Running in production
+### With Docker Compose
 
-The live server uses `docker-compose.prod.yml` together with
-`docker-compose.yml`:
-
-```
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```bash
+ANTHROPIC_API_KEY=sk-ant-... docker compose up --build
+# frontend: http://localhost:8080, backend: http://localhost:4000, redis: internal only
 ```
 
-This runs the app with Gunicorn (a production-ready web server), turns off
-debug mode, and adds security headers.
+Compose now brings up a `redis` service alongside `backend`/`frontend` and waits on its healthcheck before starting the backend, so the real-time layer is live by default in this path.
 
-## Notes on the move from PHP to Python
+### As a standalone MCP server
 
-- Laravel's **Eloquent models** → Django **models**
-- Laravel's **Sanctum tokens** → **JWT** access/refresh tokens
-  (`djangorestframework-simplejwt`)
-- Laravel's **queued Jobs** (`GenerateStoryJob`, `GenerateMediaJob`) →
-  **Celery tasks** (`apps/ai_generation/tasks.py`), using Redis as the queue
-- Laravel's **Policies** (`ExperiencePolicy`, `JourneyPolicy`) → Django REST
-  Framework **permission classes**
-- Laravel's `role:partner,admin` route middleware → a small `HasRole`
-  permission class in `apps/common/permissions.py`
-- Laravel's `ai.rate_limit` middleware → an `AiRateLimitPermission` class
-  (kept as a permission, not middleware, because the logged-in user is only
-  known once DRF checks the login token — plain Django middleware runs too
-  early to see it)
-- `config/ai.php` and `config/media.php` → environment variables read in
-  `config/settings/base.py` (`AI_STORY_PROVIDER`, `MEDIA_SIGNED_URL_TTL_SECONDS`, etc.)
+```bash
+cd backend && npm run mcp
+```
 
-## What's a stub vs. what's real
+## Real-time validation progress
 
-Everything about routing, authentication, permissions, data models, and
-background jobs is fully wired and tested. The actual calls to the Anthropic
-and Stability AI APIs (`apps/ai_generation/providers.py`) are left as clearly
-marked stubs — add real API keys and call the real APIs there when you're
-ready to go live.
+Uploading a feed used to be a single request/response: the client sent all records, waited, and got one summary back. For large feeds that means a long silent spinner with no feedback.
+
+`POST /api/validate` now accepts an optional `jobId`. When one is present:
+
+1. The frontend generates a `jobId` (`crypto.randomUUID()`), opens a Socket.IO connection, and joins a room named after that id (`socket.emit('validation:join', jobId)`) *before* sending the POST.
+2. As `quality_engine.js` scores each record, the route batches results (5 at a time, or on the last record) and emits a `validation:progress` event to that room — `io.to(jobId).emit(...)`.
+3. On completion, a `validation:complete` event fires with the final counts, and the HTTP response resolves with the full summary as before.
+
+**Why Redis, not just Socket.IO on its own:** a bare Socket.IO server keeps its rooms in local process memory. That's fine for one backend instance, but the moment you run more than one (which is the normal way to scale a Node service — more processes, not a bigger one), a client connected to instance A never sees an event emitted by instance B, even if they're both handling requests for the same `jobId`. `@socket.io/redis-adapter` fixes that: every instance publishes emitted events to Redis, every instance's clients receive them regardless of which process they're actually connected to. Using Redis here isn't just "another checkbox skill" — it's the specific mechanism that makes the real-time feature correct once you're not running a single process anymore.
+
+**Why this degrades safely, not silently breaks:** `realtime.js` is only initialized when the server actually starts listening (`server.js`, guarded by `require.main === module`), never when something just does `require('./server')` — which is exactly what Jest/Supertest do to test the Express `app` in isolation. If Redis is unreachable, `initRealtime()` rejects, `server.js` logs it and keeps serving plain HTTP/REST, and `routes/validate.js` treats a `null` Socket.IO instance as "no live listeners" — the response shape and status codes are identical either way. Every existing test in the suite runs with zero knowledge that Socket.IO/Redis exist at all.
+
+## Testing and linting
+
+```bash
+# Backend
+cd backend && npm test    # 36 Jest tests, mocked LLM loop, no API key or Redis needed
+cd backend && npm run lint
+
+# Frontend
+cd frontend && npm test   # 26 Vitest + Testing Library tests
+cd frontend && npm run lint
+cd frontend && npm run build
+```
+
+Both suites run fully offline in CI (mocked `@anthropic-ai/sdk` and mocked `api.js`). The real-time layer is exercised manually/in Docker Compose rather than in the unit suite — see the note above on why the suite never needs a live Redis instance.
+
+### API tests (Robot Framework)
+
+Separate suite that calls the real, running API — no mocks. Catches issues unit tests can't, like wrong request/response shapes.
+
+```bash
+# with the backend running (npm run dev)
+cd backend/tests/robot
+pip install robotframework robotframework-requests
+robot api_tests.robot
+```
+
+Covers `/api/validate`, `/api/rules`, `/api/ask`, including error cases (missing title, bad request body). Generates `report.html` with pass/fail results.
+
+## CI/CD (`.gitlab-ci.yml`)
+
+| Stage    | What happens |
+|----------|--------------|
+| `lint`   | ESLint on backend + frontend |
+| `test`   | Jest, Robot Framework API tests, Vitest, Vite build check |
+| `build`  | On `main`/tag: builds and pushes Docker images to the GitLab registry |
+| `deploy` | `staging` auto-deploys on `main`; `production` is manual, tag-triggered |
+
+`deploy` jobs are placeholders (`echo` statements) — swap in `az containerapp update`, an UpCloud API call, or `kubectl apply`/`helm upgrade` for your infra.
+
+## Using it for a different kind of data
+
+1. Copy `quality_engine.js`, replace the `rules` array (keep the `{ ruleId, field, message, severity }` failure shape).
+2. Run `npm run build-kb` to rebuild the knowledge base doc.
+3. Everything else — routes, search, MCP server, agent, React UI — works unchanged.

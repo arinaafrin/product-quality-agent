@@ -1,12 +1,3 @@
-/**
- * rag_store.js
- * ------------
- * A deliberately small, dependency-free retrieval store.
- *
- * It indexes two kinds of documents:
- *   1. Knowledge base markdown files (the "why" — validation rules, FAQ)
- *   2. Validation run logs (the "what happened" — actual rejections)
- */
 const fs = require('fs');
 const path = require('path');
 
@@ -35,7 +26,7 @@ class RagStore {
       if (!file.endsWith('.md')) continue;
       const full = path.join(KB_DIR, file);
       const raw = fs.readFileSync(full, 'utf-8');
-      // chunk by markdown h2 sections; keep the doc title (h1) as context
+
       const chunks = raw.split(/\n(?=## )/);
       chunks.forEach((chunk, i) => {
         const text = chunk.trim();
@@ -53,9 +44,6 @@ class RagStore {
   }
 
   /**
-   * Add a validation run's failures as retrievable "incident" documents.
-   * Called by the API after every /validate run so the agent can answer
-   * questions about what actually happened, not just the static rules.
    * @param {object} runSummary - the object returned by validateFeed()
    */
   ingestValidationRun(runSummary) {
@@ -130,7 +118,6 @@ class RagStore {
   }
 
   /**
-   * Retrieve the top-k most relevant chunks for a query.
    * @param {string} query
    * @param {number} k
    * @returns {{id: string, source: string, type: string, text: string, score: number}[]}
@@ -151,7 +138,6 @@ class RagStore {
   }
 }
 
-// Singleton — one process-wide store, mirroring how a real vector DB client would be shared.
 const ragStore = new RagStore();
 
 module.exports = { ragStore, RagStore };

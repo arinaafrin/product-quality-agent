@@ -1,17 +1,3 @@
-#!/usr/bin/env node
-/**
- * mcp_server.js
- * -------------
- * Exposes the product-feed quality engine and knowledge base as MCP tools
- * over stdio, so any MCP client (Claude Desktop, Claude Code, a custom
- * agent) can call this project directly — not just the bundled agent.js.
- *
- * Run standalone:
- *   node src/mcp_server.js
- *
- * Point an MCP client at it, e.g. in Claude Desktop's config:
- *   { "mcpServers": { "product-quality": { "command": "node", "args": ["src/mcp_server.js"] } } }
- */
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const { CallToolRequestSchema, ListToolsRequestSchema } = require('@modelcontextprotocol/sdk/types.js');

@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
 const { router: validateRouter } = require('./routes/validate');
 const { router: askRouter } = require('./routes/ask');
+const { initRealtime } = require('./realtime');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -26,7 +28,13 @@ app.use((err, _req, res, _next) => {
 });
 
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`product-quality-agent backend listening on :${PORT}`));
+  const httpServer = http.createServer(app);
+
+  initRealtime(httpServer).catch((err) => {
+    console.error('[realtime] failed to initialize, continuing without it:', err.message);
+  });
+
+  httpServer.listen(PORT, () => console.log(`product-quality-agent backend listening on :${PORT}`));
 }
 
 module.exports = { app };

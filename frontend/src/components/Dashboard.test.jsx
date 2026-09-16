@@ -1,11 +1,12 @@
-import { describe, test, expect, vi, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Dashboard from './Dashboard.jsx';
-import { validateFeed } from '../api.js';
+import { validateFeed, subscribeToValidationProgress } from '../api.js';
 
 vi.mock('../api.js', () => ({
   validateFeed: vi.fn(),
+  subscribeToValidationProgress: vi.fn(),
 }));
 
 function makeJsonFile(name, data) {
@@ -13,6 +14,11 @@ function makeJsonFile(name, data) {
 }
 
 describe('Dashboard', () => {
+  beforeEach(() => {
+
+    subscribeToValidationProgress.mockReturnValue(vi.fn());
+  });
+
   afterEach(() => {
     vi.resetAllMocks();
   });
@@ -45,7 +51,9 @@ describe('Dashboard', () => {
     const file = makeJsonFile('feed.json', [{ sku: 'A' }, { sku: 'B' }]);
     await user.upload(screen.getByLabelText(/upload feed/i), file);
 
-    await waitFor(() => expect(validateFeed).toHaveBeenCalledWith([{ sku: 'A' }, { sku: 'B' }]));
+    await waitFor(() =>
+      expect(validateFeed).toHaveBeenCalledWith([{ sku: 'A' }, { sku: 'B' }], { jobId: expect.any(String) })
+    );
     expect(await screen.findByText('feed.json')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText(/manifest — run at/i)).toBeInTheDocument();
@@ -87,6 +95,34 @@ describe('Dashboard', () => {
     const file = makeJsonFile('feed.json', { records: [{ sku: 'A' }] });
     await user.upload(screen.getByLabelText(/upload feed/i), file);
 
-    await waitFor(() => expect(validateFeed).toHaveBeenCalledWith([{ sku: 'A' }]));
+    await waitFor(() =>
+      expect(validateFeed).toHaveBeenCalledWith([{ sku: 'A' }], { jobId: expect.any(String) })
+    );
+  });
+
+  test('subscribes to live progress with the same jobId used in the validate call, and unsubscribes when done', async () => {
+    validateFeed.mockResolvedValue({
+      total: 1,
+      passed: 1,
+      rejected: 0,
+      timestamp: '2026-01-01T00:00:00.000Z',
+      results: [],
+    });
+    const unsubscribe = vi.fn();
+    subscribeToValidationProgress.mockReturnValue(unsubscribe);
+
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    const file = makeJsonFile('feed.json', [{ sku: 'A' }]);
+    await user.upload(screen.getByLabelText(/upload feed/i), file);
+
+    await waitFor(() => expect(validateFeed).toHaveBeenCalled());
+
+    const jobIdPassedToSubscribe = subscribeToValidationProgress.mock.calls[0][0];
+    const jobIdPassedToValidate = validateFeed.mock.calls[0][1].jobId;
+    expect(jobIdPassedToSubscribe).toBe(jobIdPassedToValidate);
+
+    await waitFor(() => expect(unsubscribe).toHaveBeenCalled());
   });
 });

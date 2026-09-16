@@ -14,8 +14,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "@socket.io/redis-adapter": "^8.3.0",
     "cors": "^2.8.5",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "redis": "^4.7.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

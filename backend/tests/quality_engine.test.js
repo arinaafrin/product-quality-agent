@@ -77,4 +77,33 @@ describe('validateFeed', () => {
     expect(summary.rejected).toBe(0);
     expect(summary.results[0].status).toBe('passed_with_warnings');
   });
+
+  test('is unaffected when called without an onRecord callback (backward compatible)', () => {
+    expect(() => validateFeed([goodRecord])).not.toThrow();
+  });
+
+  test('invokes onRecord once per record, in order, with the correct total', () => {
+    const badRecord = { ...goodRecord, sku: 'FDS-99999', price: -1 };
+    const seen = [];
+
+    const summary = validateFeed([goodRecord, badRecord], (result, index, total) => {
+      seen.push({ index, total, status: result.status });
+    });
+
+    expect(seen).toEqual([
+      { index: 0, total: 2, status: 'passed' },
+      { index: 1, total: 2, status: 'rejected' },
+    ]);
+
+    expect(summary.passed).toBe(1);
+    expect(summary.rejected).toBe(1);
+  });
+
+  test('a callback error does not corrupt the returned summary', () => {
+    expect(() =>
+      validateFeed([goodRecord], () => {
+        throw new Error('simulated emit failure');
+      })
+    ).toThrow('simulated emit failure');
+  });
 });
