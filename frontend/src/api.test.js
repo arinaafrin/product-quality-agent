@@ -1,5 +1,6 @@
-import { describe, test, expect, vi, afterEach } from 'vitest';
-import { validateFeed, getRules, askAgent } from './api.js';
+import { describe, test, expect, vi, afterEach, beforeEach } from 'vitest';
+import { validateFeed, getRules, askAgent, login, logout } from './api.js';
+import { getToken, clearToken } from './authClient.js';
 
 function mockFetchOnce(body, { ok = true, status = 200 } = {}) {
   global.fetch = vi.fn().mockResolvedValue({
@@ -10,8 +11,58 @@ function mockFetchOnce(body, { ok = true, status = 200 } = {}) {
 }
 
 describe('api.js', () => {
+  beforeEach(() => {
+    clearToken();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    clearToken();
+  });
+
+  test('login exchanges an apiKey for a token and persists it', async () => {
+    mockFetchOnce({ token: 'jwt-abc', expiresIn: '15m', tokenType: 'Bearer' });
+
+    await login('sk_demo_test');
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: 'sk_demo_test' }),
+    });
+    expect(getToken()).toBe('jwt-abc');
+  });
+
+  test('once logged in, subsequent requests carry the Authorization header', async () => {
+    mockFetchOnce({ token: 'jwt-xyz', expiresIn: '15m', tokenType: 'Bearer' });
+    await login('sk_demo_test');
+
+    mockFetchOnce([{ id: 'invalid-price' }]);
+    await getRules();
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/rules', {
+      headers: { Authorization: 'Bearer jwt-xyz' },
+    });
+  });
+
+  test('a 401 response clears the stored token', async () => {
+    mockFetchOnce({ token: 'jwt-expiring', expiresIn: '15m', tokenType: 'Bearer' });
+    await login('sk_demo_test');
+    expect(getToken()).toBe('jwt-expiring');
+
+    mockFetchOnce({ error: 'Invalid or expired token.' }, { ok: false, status: 401 });
+    await expect(getRules()).rejects.toThrow();
+
+    expect(getToken()).toBeNull();
+  });
+
+  test('logout clears the stored token', async () => {
+    mockFetchOnce({ token: 'jwt-abc', expiresIn: '15m', tokenType: 'Bearer' });
+    await login('sk_demo_test');
+
+    logout();
+
+    expect(getToken()).toBeNull();
   });
 
   test('validateFeed posts records to /api/validate and resolves with the parsed summary', async () => {
@@ -33,7 +84,7 @@ describe('api.js', () => {
 
     const result = await getRules();
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/rules');
+    expect(global.fetch).toHaveBeenCalledWith('/api/rules', { headers: {} });
     expect(result).toEqual([{ id: 'invalid-price' }]);
   });
 

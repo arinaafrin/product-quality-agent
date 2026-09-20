@@ -2,10 +2,17 @@ import { useState } from 'react';
 import Dashboard from './components/Dashboard.jsx';
 import RulesView from './components/RulesView.jsx';
 import AgentChat from './components/AgentChat.jsx';
+import LoginGate from './components/LoginGate.jsx';
+import { isAuthenticated, logout } from './api.js';
 
 export default function App() {
+  const [authed, setAuthed] = useState(isAuthenticated());
   const [view, setView] = useState('feed');
   const [chatOpen, setChatOpen] = useState(false);
+
+  if (!authed) {
+    return <LoginGate onAuthenticated={() => setAuthed(true)} />;
+  }
 
   return (
     <div className="app-shell">
@@ -16,6 +23,15 @@ export default function App() {
         </button>
         <button aria-current={view === 'rules'} onClick={() => setView('rules')}>
           Rules
+        </button>
+        <button
+          className="nav-logout"
+          onClick={() => {
+            logout();
+            setAuthed(false);
+          }}
+        >
+          Sign out
         </button>
       </nav>
 
