@@ -1,0 +1,14 @@
+[
+  { "invoiceNumber": "INV-004821", "vendorId": "V-1042", "amount": 1250.00, "vatRate": 25.5, "currency": "EUR", "invoiceDate": "2026-09-10" },
+  { "invoiceNumber": "INV-004822", "vendorId": "V-1077", "amount": 89.90, "vatRate": 14, "currency": "EUR", "invoiceDate": "2026-09-12" },
+  { "invoiceNumber": "", "vendorId": "V-1042", "amount": 430.00, "vatRate": 25.5, "currency": "EUR", "invoiceDate": "2026-09-11" },
+  { "invoiceNumber": "4821B", "vendorId": "V-1099", "amount": 220.50, "vatRate": 10, "currency": "EUR", "invoiceDate": "2026-09-13" },
+  { "invoiceNumber": "INV-004825", "vendorId": "V-1050", "amount": -75.00, "vatRate": 25.5, "currency": "EUR", "invoiceDate": "2026-09-14" },
+  { "invoiceNumber": "INV-004826", "vendorId": "V-1050", "amount": 610.00, "vatRate": 21, "currency": "EUR", "invoiceDate": "2026-09-14" },
+  { "invoiceNumber": "INV-004827", "vendorId": "V-1061", "amount": 980.00, "vatRate": 0, "currency": "RUB", "invoiceDate": "2026-09-15" },
+  { "invoiceNumber": "INV-004828", "vendorId": "", "amount": 145.00, "vatRate": 25.5, "currency": "EUR", "invoiceDate": "2026-09-15" },
+  { "invoiceNumber": "INV-004829", "vendorId": "V-1042", "amount": 300.00, "vatRate": 25.5, "currency": "EUR", "invoiceDate": "2026-12-01" },
+  { "invoiceNumber": "INV-004830", "vendorId": "V-1088", "amount": 55.20, "vatRate": 25.5, "currency": "SEK", "invoiceDate": "2026-09-16" },
+  { "invoiceNumber": "INV-004830", "vendorId": "V-1088", "amount": 55.20, "vatRate": 25.5, "currency": "SEK", "invoiceDate": "2026-09-16" },
+  { "invoiceNumber": "INV-004831", "vendorId": "V-1013", "amount": 12.40, "vatRate": 14, "currency": "EUR", "invoiceDate": "not-a-date" }
+]
