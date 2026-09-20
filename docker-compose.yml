@@ -19,7 +19,11 @@ services:
       - PORT=4000
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - REDIS_URL=redis://redis:6379
-      - FRONTEND_ORIGIN=http://localhost:8080
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set — see backend/.env.example}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
+      - API_KEYS=${API_KEYS}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8080}
+      - ACTIVE_ENGINE=${ACTIVE_ENGINE:-product}
     depends_on:
       redis:
         condition: service_healthy

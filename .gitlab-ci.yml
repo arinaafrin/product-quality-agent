@@ -55,7 +55,9 @@ lint:frontend:
 test:backend:
   stage: test
   image: $NODE_IMAGE
-  variables: { DIR: backend }
+  variables:
+    DIR: backend
+    JWT_SECRET: ci-test-secret-not-for-production
   <<: *node_cache
   script:
     - cd backend && npm ci --no-audit --no-fund
@@ -71,7 +73,11 @@ test:backend:
 test:api-robot:
   stage: test
   image: $NODE_IMAGE
-  variables: { DIR: backend }
+  variables:
+    DIR: backend
+    JWT_SECRET: ci-test-secret-not-for-production
+    API_KEYS: demo:sk_demo_ci
+    ALLOWED_ORIGINS: http://localhost:5173
   <<: *node_cache
   script:
     # node:alpine has no python — install it for Robot Framework
@@ -79,11 +85,13 @@ test:api-robot:
     - cd backend && npm ci --no-audit --no-fund
     # Start the backend in the background; the suite's own health-check
     # wait (see Suite Setup in api_tests.robot) handles startup timing,
-    # so no manual sleep is needed here.
+    # so no manual sleep is needed here. Redis isn't started in this job —
+    # the real-time layer degrades gracefully (see realtime.js), so plain
+    # REST endpoints, which is all this suite exercises, still work.
     - npm run dev &
     - cd tests/robot
     - pip3 install --no-cache-dir --break-system-packages robotframework robotframework-requests
-    - robot api_tests.robot
+    - robot --variable API_KEY:sk_demo_ci api_tests.robot
   artifacts:
     when: always
     paths:
