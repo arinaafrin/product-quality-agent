@@ -1,4 +1,5 @@
 const request = require('supertest');
+const { authHeader } = require('./helpers/authHeader');
 
 describe('POST /api/ask', () => {
   const originalKey = process.env.ANTHROPIC_API_KEY;
@@ -12,16 +13,28 @@ describe('POST /api/ask', () => {
     if (originalKey) process.env.ANTHROPIC_API_KEY = originalKey;
   });
 
+  test('rejects a request with no auth token with 401', async () => {
+    const { app } = require('../src/server');
+    const res = await request(app).post('/api/ask').send({ question: 'anything' });
+    expect(res.status).toBe(401);
+  });
+
   test('rejects a missing question with 400', async () => {
     const { app } = require('../src/server');
-    const res = await request(app).post('/api/ask').send({});
+    const res = await request(app).post('/api/ask').set(authHeader()).send({});
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/question/i);
+    expect(res.body.issues.some((issue) => issue.path === 'question')).toBe(true);
   });
 
   test('rejects a non-string question with 400', async () => {
     const { app } = require('../src/server');
-    const res = await request(app).post('/api/ask').send({ question: 42 });
+    const res = await request(app).post('/api/ask').set(authHeader()).send({ question: 42 });
+    expect(res.status).toBe(400);
+  });
+
+  test('rejects an empty question with 400', async () => {
+    const { app } = require('../src/server');
+    const res = await request(app).post('/api/ask').set(authHeader()).send({ question: '   ' });
     expect(res.status).toBe(400);
   });
 
@@ -29,6 +42,7 @@ describe('POST /api/ask', () => {
     const { app } = require('../src/server');
     const res = await request(app)
       .post('/api/ask')
+      .set(authHeader())
       .send({ question: 'why does invalid currency get rejected?' });
 
     expect(res.status).toBe(200);
@@ -44,7 +58,7 @@ describe('POST /api/ask', () => {
     const { app } = require('../src/server');
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    const res = await request(app).post('/api/ask').send({ question: 'anything' });
+    const res = await request(app).post('/api/ask').set(authHeader()).send({ question: 'anything' });
 
     expect(res.status).toBe(500);
     expect(res.body.error).toMatch(/agent failed/i);

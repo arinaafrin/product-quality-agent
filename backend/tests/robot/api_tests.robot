@@ -2,12 +2,13 @@
 Library    RequestsLibrary
 Library    Collections
 Library    OperatingSystem
-Suite Setup    Wait For Backend And Create Session
+Suite Setup    Wait For Backend, Authenticate, And Create Session
 
 *** Variables ***
 # Override at the command line for staging/CI, e.g.:
-#   robot --variable BASE_URL:http://backend:4000 api_tests.robot
+#   robot --variable BASE_URL:http://backend:4000 --variable API_KEY:sk_demo_ci api_tests.robot
 ${BASE_URL}             http://localhost:4000
+${API_KEY}              sk_demo_ci
 ${VALID_FEED_PATH}      ${CURDIR}/sample_feed.json
 ${HEALTH_TIMEOUT}       30s
 ${HEALTH_RETRY}         1s
@@ -15,13 +16,28 @@ ${HEALTH_RETRY}         1s
 *** Test Cases ***
 Get Rules Returns Rule Metadata
     [Documentation]    /api/rules is a GET with no body, defined in routes/validate.js.
-    ...    Returns a list of {id, title, description, severity} objects.
+    ...    Returns a list of {id, title, description, severity} objects. Requires auth
+    ...    (see Suite Setup) since routes/validate.js protects every route with requireAuth.
     [Tags]    smoke    rules
     ${response}=    GET On Session    api    /api/rules    expected_status=200
     ${rules}=    Set Variable    ${response.json()}
     Should Not Be Empty    ${rules}
     Dictionary Should Contain Key    ${rules}[0]    id
     Dictionary Should Contain Key    ${rules}[0]    severity
+
+Requests Without A Token Are Rejected
+    [Documentation]    requireAuth (src/auth.js) should 401 any request with no
+    ...    Authorization header, regardless of how well-formed the body is.
+    [Tags]    smoke    auth    negative
+    Create Session    anon    ${BASE_URL}
+    ${response}=    GET On Session    anon    /api/rules    expected_status=401
+
+Requests With An Invalid Token Are Rejected
+    [Documentation]    A syntactically-present but bogus/expired token should also 401,
+    ...    not be silently accepted.
+    [Tags]    auth    negative
+    Create Session    bad_auth    ${BASE_URL}    headers=${{ {'Authorization': 'Bearer not-a-real-token'} }}
+    ${response}=    GET On Session    bad_auth    /api/rules    expected_status=401
 
 Validate Endpoint Accepts A Known-Good Feed
     [Documentation]    /api/validate requires the body wrapped as {"records": [...]},
@@ -38,7 +54,9 @@ Validate Endpoint Accepts A Known-Good Feed
 
 Validate Endpoint Rejects A Record With Missing Title
     [Documentation]    A record with no title should come back with status "rejected"
-    ...    and a failure entry with ruleId "missing-title".
+    ...    and a failure entry with ruleId "missing-title". (Assumes the default
+    ...    "product" ACTIVE_ENGINE; see engine_switch tests in the Jest suite for
+    ...    invoice-engine coverage.)
     [Tags]    validate
     ${bad_record}=    Create Dictionary    sku=TEST-001    price=19.99    currency=EUR
     ...    category=lighting    imageUrl=https://via.placeholder.com/150
@@ -67,7 +85,7 @@ Validate Endpoint Rejects An Unsupported Currency
 
 Validate Endpoint Rejects Malformed Request Body
     [Documentation]    Sending a bare array instead of {"records": [...]} should
-    ...    return 400, per the explicit check in routes/validate.js.
+    ...    return 400, per the zod schema in src/validation.js.
     [Tags]    validate    negative
     ${bad_record}=    Create Dictionary    sku=TEST-003    title=Test    price=10    currency=EUR
     ${bare_array}=    Create List    ${bad_record}
@@ -92,7 +110,8 @@ Ask Endpoint Answers A Grounded Question
     Should Not Be Empty    ${response.json()}
 
 Ask Endpoint Rejects Missing Question Field
-    [Documentation]    routes/ask.js explicitly 400s when "question" is missing or not a string.
+    [Documentation]    routes/ask.js explicitly 400s when "question" is missing or not a string
+    ...    (enforced by the askBodySchema zod schema in src/validation.js).
     [Tags]    ask    negative
     ${payload}=    Create Dictionary    notAQuestion=hello
     ${response}=    POST On Session    api    /api/ask    json=${payload}    expected_status=400
@@ -104,12 +123,22 @@ Load JSON From File
     ${json}=    Evaluate    json.loads('''${content}''')    json
     RETURN    ${json}
 
-Wait For Backend And Create Session
-    [Documentation]    Polls /api/health before the suite starts, so tests fail
-    ...    with a clear "backend never came up" message instead of a confusing
-    ...    connection-refused error on the very first test case. Useful when
-    ...    the backend is still booting (e.g. right after `docker compose up`
-    ...    or a freshly started CI service container).
-    Create Session    api    ${BASE_URL}
+Wait For Backend, Authenticate, And Create Session
+    [Documentation]    Polls /api/health before the suite starts (so tests fail with a
+    ...    clear "backend never came up" message instead of a confusing
+    ...    connection-refused error), then exchanges API_KEY for a JWT via
+    ...    POST /api/auth/token and creates the "api" session with that token
+    ...    pre-attached as an Authorization header, so every test case below
+    ...    is authenticated by default. The backend must have API_KEY configured
+    ...    in its API_KEYS env var (see backend/.env.example) — e.g.
+    ...    API_KEYS=demo:sk_demo_ci — matching the ${API_KEY} variable here.
+    Create Session    health    ${BASE_URL}
     Wait Until Keyword Succeeds    ${HEALTH_TIMEOUT}    ${HEALTH_RETRY}
-    ...    GET On Session    api    /api/health    expected_status=200
+    ...    GET On Session    health    /api/health    expected_status=200
+
+    ${auth_payload}=    Create Dictionary    apiKey=${API_KEY}
+    ${token_response}=    POST On Session    health    /api/auth/token    json=${auth_payload}    expected_status=200
+    ${token}=    Set Variable    ${token_response.json()}[token]
+
+    ${auth_headers}=    Create Dictionary    Authorization=Bearer ${token}
+    Create Session    api    ${BASE_URL}    headers=${auth_headers}
