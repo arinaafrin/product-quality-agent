@@ -1,19 +1,36 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const http = require('http');
 const { router: validateRouter } = require('./routes/validate');
 const { router: askRouter } = require('./routes/ask');
+const { router: authRouter } = require('./routes/auth');
 const { initRealtime } = require('./realtime');
+const { corsOriginCheck } = require('./corsConfig');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+app.use(helmet());
+app.use(cors({ origin: corsOriginCheck }));
 app.use(express.json({ limit: '2mb' }));
+
+// General API budget. The stricter, dedicated limiter on /api/auth/token
+// (see routes/auth.js) is what actually matters for brute-force resistance;
+// this one just caps overall abuse of the validate/ask endpoints.
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 
+app.use('/api', apiLimiter);
+app.use('/api', authRouter);
 app.use('/api', validateRouter);
 app.use('/api', askRouter);
 
@@ -24,6 +41,9 @@ app.get('*', (req, res) => {
 
 app.use((err, _req, res, _next) => {
   console.error(err);
+  if (err.message && err.message.includes('not allowed by CORS')) {
+    return res.status(403).json({ error: 'Origin not allowed.' });
+  }
   res.status(500).json({ error: 'Internal server error' });
 });
 

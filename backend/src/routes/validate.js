@@ -1,29 +1,60 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
-const { validateFeed, getRuleDocs } = require('../quality_engine');
+const { validateFeed, getRuleDocs, activeEngine } = require('../quality_engine');
 const { ragStore } = require('../rag_store');
-const { getIO } = require('../realtime');
+const { getIO, roomName } = require('../realtime');
+const { requireAuth } = require('../auth');
+const { validateBodySchema, validateBody } = require('../validation');
 
 const router = express.Router();
-const runHistory = [];
+
+// Sample-feed filenames per active engine, so the "download a sample feed"
+// buttons always hand back data shaped for whichever domain is currently
+// running (see ACTIVE_ENGINE / src/engines/index.js).
+const SAMPLE_FEEDS = {
+  product: { json: 'sample_feed.json', csv: 'sample_feed.csv' },
+  invoice: { json: 'sample_invoice_feed.json', csv: 'sample_invoice_feed.csv' },
+};
+
+function sampleFeedPath(format) {
+  const files = SAMPLE_FEEDS[activeEngine] || SAMPLE_FEEDS.product;
+  const filename = files[format];
+  const fullPath = path.join(__dirname, '../data', filename);
+  return fs.existsSync(fullPath) ? fullPath : null;
+}
+
+// SECURITY NOTE: this used to be a single module-level array shared by every
+// caller, regardless of who they were — any client could read any other
+// client's validation history via GET /api/runs. It's now a Map keyed by
+// tenantId (set by requireAuth from the caller's JWT), so each tenant only
+// ever sees its own runs. See SECURITY.md for the full writeup.
+const runHistoryByTenant = new Map();
 const MAX_HISTORY = 20;
 const PROGRESS_BATCH_SIZE = 5;
 
-router.get('/sample-feed.csv', (_req, res) => {
-  res.download(path.join(__dirname, '../data/sample_feed.csv'), 'sample_feed.csv');
+function getHistory(tenantId) {
+  if (!runHistoryByTenant.has(tenantId)) runHistoryByTenant.set(tenantId, []);
+  return runHistoryByTenant.get(tenantId);
+}
+
+router.get('/sample-feed.csv', requireAuth, (_req, res) => {
+  const filePath = sampleFeedPath('csv');
+  if (!filePath) return res.status(404).json({ error: `No sample CSV feed for engine "${activeEngine}".` });
+  res.download(filePath, path.basename(filePath));
 });
 
-router.get('/sample-feed.json', (_req, res) => {
-  res.download(path.join(__dirname, '../data/sample_feed.json'), 'sample_feed.json');
+router.get('/sample-feed.json', requireAuth, (_req, res) => {
+  const filePath = sampleFeedPath('json');
+  if (!filePath) return res.status(404).json({ error: `No sample JSON feed for engine "${activeEngine}".` });
+  res.download(filePath, path.basename(filePath));
 });
 
-router.post('/validate', (req, res) => {
-  const records = req.body?.records;
-  const jobId = req.body?.jobId;
-  if (!Array.isArray(records)) {
-    return res.status(400).json({ error: 'Request body must be { "records": [...] }' });
-  }
+router.post('/validate', requireAuth, validateBody(validateBodySchema), (req, res) => {
+  const { records, jobId } = req.body;
+  const { tenantId } = req;
   const io = jobId ? getIO() : null;
+  const room = jobId ? roomName(tenantId, jobId) : null;
   let batch = [];
 
   const summary = validateFeed(records, (result, index, total) => {
@@ -32,7 +63,7 @@ router.post('/validate', (req, res) => {
       batch.push(result);
       const isLastRecord = index === total - 1;
       if (batch.length >= PROGRESS_BATCH_SIZE || isLastRecord) {
-        io.to(jobId).emit('validation:progress', {
+        io.to(room).emit('validation:progress', {
           jobId,
           processed: index + 1,
           total,
@@ -46,7 +77,7 @@ router.post('/validate', (req, res) => {
   });
 
   if (io) {
-    io.to(jobId).emit('validation:complete', {
+    io.to(room).emit('validation:complete', {
       jobId,
       total: summary.total,
       passed: summary.passed,
@@ -56,22 +87,25 @@ router.post('/validate', (req, res) => {
   }
 
   ragStore.ingestValidationRun(summary);
-  runHistory.unshift(summary);
-  if (runHistory.length > MAX_HISTORY) runHistory.pop();
+  const history = getHistory(tenantId);
+  history.unshift(summary);
+  if (history.length > MAX_HISTORY) history.pop();
   res.json(summary);
 });
 
-router.get('/runs', (_req, res) => {
-  res.json(runHistory.map(({ results, ...rest }) => rest)); 
+router.get('/runs', requireAuth, (req, res) => {
+  const history = getHistory(req.tenantId);
+  res.json(history.map(({ results: _results, ...rest }) => rest));
 });
 
-router.get('/runs/latest', (_req, res) => {
-  if (runHistory.length === 0) return res.status(404).json({ error: 'No validation runs yet.' });
-  res.json(runHistory[0]);
+router.get('/runs/latest', requireAuth, (req, res) => {
+  const history = getHistory(req.tenantId);
+  if (history.length === 0) return res.status(404).json({ error: 'No validation runs yet.' });
+  res.json(history[0]);
 });
 
-router.get('/rules', (_req, res) => {
+router.get('/rules', requireAuth, (_req, res) => {
   res.json(getRuleDocs());
 });
 
-module.exports = { router, runHistory };
+module.exports = { router, runHistoryByTenant };

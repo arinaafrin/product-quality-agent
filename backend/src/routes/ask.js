@@ -1,13 +1,12 @@
 const express = require('express');
 const { ask } = require('../agent');
+const { requireAuth } = require('../auth');
+const { askBodySchema, validateBody } = require('../validation');
 
 const router = express.Router();
 
-router.post('/ask', async (req, res) => {
-  const question = req.body?.question;
-  if (!question || typeof question !== 'string') {
-    return res.status(400).json({ error: 'Request body must be { "question": "..." }' });
-  }
+router.post('/ask', requireAuth, validateBody(askBodySchema), async (req, res) => {
+  const { question } = req.body;
   try {
     const result = await ask(question);
     res.json(result);
