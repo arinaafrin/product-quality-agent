@@ -17,9 +17,6 @@ app.use(helmet());
 app.use(cors({ origin: corsOriginCheck }));
 app.use(express.json({ limit: '2mb' }));
 
-// General API budget. The stricter, dedicated limiter on /api/auth/token
-// (see routes/auth.js) is what actually matters for brute-force resistance;
-// this one just caps overall abuse of the validate/ask endpoints.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 300,

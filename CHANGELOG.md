@@ -49,6 +49,19 @@ runtime domain switch. See [SECURITY.md](./SECURITY.md) for the full threat-mode
 - `README.md` rewritten to document auth, the engine switch, and corrected test counts.
 
 ### Fixed
+- **Sample-feed downloads were broken by the new auth requirement.**
+  `GET /api/sample-feed.{json,csv}` correctly requires auth like every other
+  route, but `Dashboard.jsx` linked to them with plain `<a href download>`
+  tags — a browser navigation can't attach an `Authorization` header, so
+  clicking either download button returned a raw `401` instead of the file.
+  Replaced with an authenticated `fetch` + blob download
+  (`downloadSampleFeed()` in `api.js`).
+- **`.env` was never actually loaded.** `npm run dev` was just `node --watch
+  src/server.js` — no dotenv, no `--env-file`. Filling in `backend/.env` had
+  zero effect unless you manually exported every variable into your shell
+  first, so a correctly-formatted `.env` still produced `401 Invalid API
+  key` on every login. Added `dotenv` and load it at the top of
+  `server.js`, `mcp_server.js`, and `scripts/build-kb.js`.
 - **Cross-tenant data leak**: `GET /api/runs` used to return every caller's validation
   history from one shared in-memory array, regardless of who asked. Any client could read
   any other client's data. Now scoped per authenticated tenant.

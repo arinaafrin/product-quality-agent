@@ -1,10 +1,4 @@
 const { z } = require('zod');
-
-// A generous but bounded shape: quality_engine.js's own rules do the
-// field-level checking (missing title, bad price, etc), so this layer's job
-// is just to stop obviously-hostile input before it reaches business logic —
-// wildly oversized payloads, non-object records, or a body that isn't shaped
-// like the API contract at all.
 const MAX_RECORDS = 5000;
 
 const validateBodySchema = z.object({

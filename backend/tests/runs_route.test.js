@@ -73,9 +73,6 @@ describe('GET /api/runs and /api/runs/latest', () => {
     expect(listRes.body[1].total).toBe(1);
   });
 
-  // Regression test for the tenant-isolation bug fixed in this update:
-  // runHistory used to be one array shared by every caller, so any client
-  // could read any other client's validation runs via GET /api/runs.
   test('SECURITY: one tenant cannot see another tenant\'s validation runs', async () => {
     const app = freshApp();
     const tenantAHeaders = authHeader('tenant-alpha');

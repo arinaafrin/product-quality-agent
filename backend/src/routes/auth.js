@@ -4,9 +4,6 @@ const { signToken, tenantIdForApiKey } = require('../auth');
 
 const router = express.Router();
 
-// Deliberately much stricter than the general API limiter: this is the one
-// endpoint an attacker would hammer to brute-force an API key, so it gets a
-// tight per-IP budget independent of the rest of the app's traffic.
 const tokenLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,

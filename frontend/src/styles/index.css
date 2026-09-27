@@ -476,3 +476,9 @@ body {
 .nav-logout {
   margin-top: auto;
 }
+
+.download-error {
+  color: #b3261e;
+  font-size: 13px;
+  margin-top: 8px;
+}

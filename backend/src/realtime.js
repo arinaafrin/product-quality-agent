@@ -6,15 +6,6 @@ const { getAllowedOrigins } = require('./corsConfig');
 
 let io = null;
 
-/**
- * Builds a room name namespaced by tenant so that a client can never join
- * (or be sent updates for) a job that belongs to another tenant, even if it
- * somehow learned that tenant's jobId. Belt-and-suspenders: jobIds are
- * already unguessable UUIDs, but tenant isolation shouldn't rely on that
- * alone.
- * @param {string} tenantId
- * @param {string} jobId
- */
 function roomName(tenantId, jobId) {
   return `${tenantId}:${jobId}`;
 }
@@ -38,10 +29,6 @@ async function initRealtime(httpServer) {
   await Promise.all([pubClient.connect(), subClient.connect()]);
   io.adapter(createAdapter(pubClient, subClient));
 
-  // Socket connections authenticate the same way REST calls do: a JWT minted
-  // by POST /api/auth/token, passed as `auth: { token }` on the client. A
-  // socket that never authenticates never gets a tenantId and can't join
-  // any room.
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Authentication required.'));

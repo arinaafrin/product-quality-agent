@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-# Runs before every container start (web, worker, or beat). Waits for
-# Postgres to accept connections, applies migrations, then hands off to
-# whatever command the container was started with (gunicorn, celery, etc).
 set -euo pipefail
 
 host="${DATABASE_HOST:-db}"

@@ -1,10 +1,3 @@
-/**
- * ALLOWED_ORIGINS is a comma-separated list, e.g.
- *   ALLOWED_ORIGINS=https://app.example.com,https://staging.example.com
- * Falls back to common local-dev origins so `npm run dev` keeps working
- * out of the box, but production deployments should always set this
- * explicitly — see SECURITY.md.
- */
 const DEFAULT_DEV_ORIGINS = ['http://localhost:5173', 'http://localhost:8080'];
 
 function getAllowedOrigins() {
@@ -16,12 +9,6 @@ function getAllowedOrigins() {
     .filter(Boolean);
 }
 
-/**
- * Express `cors` origin callback. Allows same-origin/no-origin requests
- * (curl, server-to-server, tests) and any origin on the allowlist; rejects
- * everything else instead of the previous behaviour of reflecting any
- * `Origin` header back (i.e. `cors()` with no options).
- */
 function corsOriginCheck(origin, callback) {
   if (!origin) return callback(null, true);
   const allowed = getAllowedOrigins();

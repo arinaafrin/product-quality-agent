@@ -2,11 +2,12 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Dashboard from './Dashboard.jsx';
-import { validateFeed, subscribeToValidationProgress } from '../api.js';
+import { validateFeed, subscribeToValidationProgress, downloadSampleFeed } from '../api.js';
 
 vi.mock('../api.js', () => ({
   validateFeed: vi.fn(),
   subscribeToValidationProgress: vi.fn(),
+  downloadSampleFeed: vi.fn(),
 }));
 
 function makeJsonFile(name, data) {
@@ -124,5 +125,26 @@ describe('Dashboard', () => {
     expect(jobIdPassedToSubscribe).toBe(jobIdPassedToValidate);
 
     await waitFor(() => expect(unsubscribe).toHaveBeenCalled());
+  });
+
+  test('clicking the sample JSON/CSV buttons calls downloadSampleFeed with the right format', async () => {
+    downloadSampleFeed.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    await user.click(screen.getByRole('button', { name: /download sample json/i }));
+    expect(downloadSampleFeed).toHaveBeenCalledWith('json');
+
+    await user.click(screen.getByRole('button', { name: /download sample csv/i }));
+    expect(downloadSampleFeed).toHaveBeenCalledWith('csv');
+  });
+
+  test('shows an inline error if the sample download fails (e.g. an expired token)', async () => {
+    downloadSampleFeed.mockRejectedValue(new Error('Invalid or expired token.'));
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    await user.click(screen.getByRole('button', { name: /download sample json/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/invalid or expired token/i);
   });
 });

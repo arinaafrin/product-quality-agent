@@ -1,16 +1,3 @@
-/**
- * agent.js
- * --------
- * The chat-facing agent used by the backend API (POST /api/ask).
- *
- * Default mode — no API key required: retrieves from the RAG store
- * (ragStore.search) and composes a grounded answer directly from the
- * retrieved chunks, with no LLM call at all. This is deliberately simple
- * and fully offline, matching the same "no external dependency" approach
- * as rag_store.js: it always works, with zero configuration.
- *
- * Optional upgrade — set ANTHROPIC_API_KEY
- */
 const { ragStore } = require('./rag_store');
 
 const MODEL = 'claude-sonnet-4-6';

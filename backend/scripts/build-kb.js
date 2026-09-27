@@ -1,13 +1,3 @@
-#!/usr/bin/env node
-/**
- * Regenerates data/knowledge_base/validation-rules.md directly from the
- * rule metadata of whichever engine is active (see src/engines/index.js).
- * Run this after editing any rule so the RAG knowledge base and the
- * agent's answers never drift from the actual validation logic.
- *
- *   node scripts/build-kb.js
- *   ACTIVE_ENGINE=invoice node scripts/build-kb.js
- */
 const fs = require('fs');
 const path = require('path');
 const { getRuleDocs, activeEngine, activeEngineTitle } = require('../src/quality_engine');

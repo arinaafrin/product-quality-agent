@@ -9,9 +9,6 @@ const { validateBodySchema, validateBody } = require('../validation');
 
 const router = express.Router();
 
-// Sample-feed filenames per active engine, so the "download a sample feed"
-// buttons always hand back data shaped for whichever domain is currently
-// running (see ACTIVE_ENGINE / src/engines/index.js).
 const SAMPLE_FEEDS = {
   product: { json: 'sample_feed.json', csv: 'sample_feed.csv' },
   invoice: { json: 'sample_invoice_feed.json', csv: 'sample_invoice_feed.csv' },
@@ -24,11 +21,6 @@ function sampleFeedPath(format) {
   return fs.existsSync(fullPath) ? fullPath : null;
 }
 
-// SECURITY NOTE: this used to be a single module-level array shared by every
-// caller, regardless of who they were — any client could read any other
-// client's validation history via GET /api/runs. It's now a Map keyed by
-// tenantId (set by requireAuth from the caller's JWT), so each tenant only
-// ever sees its own runs. See SECURITY.md for the full writeup.
 const runHistoryByTenant = new Map();
 const MAX_HISTORY = 20;
 const PROGRESS_BATCH_SIZE = 5;

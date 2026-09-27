@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { validateFeed, subscribeToValidationProgress } from '../api.js';
+import { validateFeed, subscribeToValidationProgress, downloadSampleFeed } from '../api.js';
 import ManifestStrip from './ManifestStrip.jsx';
 import FailureTable from './FailureTable.jsx';
+
 
 const SAMPLE_HINT = 'backend/src/data/sample_feed.json';
 
@@ -10,15 +11,33 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fileName, setFileName] = useState(null);
-  const [progress, setProgress] = useState(null); 
+  const [progress, setProgress] = useState(null);
+  const [downloadError, setDownloadError] = useState(null);
+
+  async function handleDownload(format) {
+    setDownloadError(null);
+    try {
+      await downloadSampleFeed(format);
+    } catch (err) {
+      setDownloadError(err.message || `Could not download the sample ${format.toUpperCase()} feed.`);
+    }
+  }
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFileName(file.name);
+
+    const originalName = file.name;
+    setFileName(originalName);
     setError(null);
     setLoading(true);
     setProgress(null);
+
+    if (!originalName.toLowerCase().endsWith('.json')) {
+      setError('Invalid file extension. Please upload a file ending in .json');
+      setLoading(false);
+      return;
+    }
 
     const jobId = crypto.randomUUID();
     const unsubscribe = subscribeToValidationProgress(jobId, {
@@ -27,13 +46,18 @@ export default function Dashboard() {
 
     try {
       const text = await file.text();
+
+      if (text.trim().startsWith('<')) {
+        throw new Error('This file contains HTML code, not valid JSON records.');
+      }
+
       const records = JSON.parse(text);
       const result = await validateFeed(Array.isArray(records) ? records : records.records || [], {
         jobId,
       });
       setSummary(result);
     } catch (err) {
-      setError(err.message || 'Could not read that file as a JSON product feed.');
+      setError(err.message || 'Could not parse this file. Ensure it is formatted as a valid JSON array.');
     } finally {
       setLoading(false);
       setProgress(null);
@@ -62,13 +86,18 @@ export default function Dashboard() {
           style={{ display: 'none' }}
         />
         {fileName && <span className="file-label">{fileName}</span>}
-        <a className="secondary-btn" href="/api/sample-feed.json" download="sample_feed.json">
+        <button type="button" className="secondary-btn" onClick={() => handleDownload('json')}>
           Download sample JSON
-        </a>
-        <a className="secondary-btn" href="/api/sample-feed.csv" download="sample_feed.csv">
+        </button>
+        <button type="button" className="secondary-btn" onClick={() => handleDownload('csv')}>
           Download sample CSV
-        </a>
+        </button>
       </div>
+      {downloadError && (
+        <p role="alert" className="download-error">
+          {downloadError}
+        </p>
+      )}
 
       {loading && progress && (
         <div className="progress-row" role="status" aria-live="polite" style={{ marginTop: -18, marginBottom: 24 }}>
