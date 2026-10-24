@@ -1,4 +1,5 @@
 const { ragStore } = require('./rag_store');
+const { askAzureOpenAI } = require('./providers/azure_openai');
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -120,23 +121,45 @@ async function askWithLLM(question) {
   };
 }
 
-/**
- * Ask the agent a question. Uses the LLM tool-use loop if ANTHROPIC_API_KEY
- * is set (falling back to offline synthesis on any error), otherwise goes
- * straight to offline synthesis.
- * @param {string} question
- * @returns {Promise<{answer: string, toolCalls: Array, mode: 'offline'|'llm'}>}
- */
-async function ask(question) {
-  if (process.env.ANTHROPIC_API_KEY) {
-    try {
-      return await askWithLLM(question);
-    } catch (err) {
-      console.error('LLM agent call failed, falling back to offline synthesis:', err.message);
-      return askOffline(question);
-    }
+function pickProvider() {
+  if (process.env.LLM_PROVIDER === 'azure-openai' && process.env.AZURE_OPENAI_API_KEY) {
+    return 'azure-openai';
   }
-  return askOffline(question);
+  if (process.env.ANTHROPIC_API_KEY) return 'anthropic';
+  return null;
 }
+
+async function ask(question) {
+  const provider = pickProvider();
+  if (!provider) return askOffline(question);
+  try {
+    if (provider === 'azure-openai') {
+      return await askAzureOpenAI({ question, systemPrompt: SYSTEM_PROMPT, runTool });
+    }
+    return await askWithLLM(question);
+  } catch (err) {
+    console.error(`LLM agent call failed (${provider}), falling back to offline synthesis:`, err.message);
+    return askOffline(question);
+  }
+}
+
+// /**
+//  * Ask the agent a question. Uses the LLM tool-use loop if ANTHROPIC_API_KEY
+//  * is set (falling back to offline synthesis on any error), otherwise goes
+//  * straight to offline synthesis.
+//  * @param {string} question
+//  * @returns {Promise<{answer: string, toolCalls: Array, mode: 'offline'|'llm'}>}
+//  */
+// async function ask(question) {
+//   if (process.env.ANTHROPIC_API_KEY) {
+//     try {
+//       return await askWithLLM(question);
+//     } catch (err) {
+//       console.error('LLM agent call failed, falling back to offline synthesis:', err.message);
+//       return askOffline(question);
+//     }
+//   }
+//   return askOffline(question);
+// }
 
 module.exports = { ask };

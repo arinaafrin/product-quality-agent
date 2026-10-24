@@ -1,0 +1,8 @@
+.git
+**/node_modules
+**/coverage
+**/dist
+**/.env
+**/junit.xml
+backend/tests/robot/*.html
+backend/tests/robot/output.xml

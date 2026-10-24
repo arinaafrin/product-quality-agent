@@ -8,7 +8,7 @@
     "dev": "node --watch src/server.js",
     "mcp": "node src/mcp_server.js",
     "build-kb": "node scripts/build-kb.js",
-    "test": "jest --coverage --reporters=default --reporters=jest-junit",
+    "test": "jest --coverage --runInBand --reporters=default --reporters=jest-junit",
     "lint": "eslint src tests scripts"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "openai": "^7.43.0",
     "redis": "^4.7.1",
     "socket.io": "^4.8.3",
     "zod": "^3.23.8"
