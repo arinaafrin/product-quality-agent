@@ -41,7 +41,7 @@ jobs:
       - run: npm test
       - run: npm run build
 
-    docker:
+  docker:
     needs: [backend, frontend]
     runs-on: ubuntu-latest
     steps:
