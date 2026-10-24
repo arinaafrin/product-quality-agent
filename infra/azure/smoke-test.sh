@@ -12,7 +12,7 @@ code() { curl -s -o /dev/null -w "%{http_code}" "$@"; }
 [ "$(code -X POST "$BASE/api/auth/token" -H "$JSON" -d '{"apiKey":"wrong"}')" = 401 ] \
   && pass "wrong API key is 401" || fail "wrong key check"
 
-TOKEN=$(curl -sf -X POST "$BASE/api/auth/token" -H "$JSON" -d "{\"apiKey\":\"$KEY\"}" | jq -r .token)
+TOKEN=$(curl -sf -X POST "$BASE/api/auth/token" -H "$JSON" -d "{\"apiKey\":\"$KEY\"}" | jq -r .token || true)
 [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ] && pass "token issued" || fail "token"
 AUTH="Authorization: Bearer $TOKEN"
 
