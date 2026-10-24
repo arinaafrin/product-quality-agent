@@ -55,7 +55,7 @@ jobs:
             -e ALLOWED_ORIGINS=http://localhost:4000 pqa:ci
           curl -sf --retry 12 --retry-delay 5 --retry-connrefused http://localhost:4000/api/health
       - name: Smoke test
-        run: ./infra/azure/smoke-test.sh http://localhost:4000 sk_ci
+        run: bash ./infra/azure/smoke-test.sh http://localhost:4000 sk_ci
       - name: Robot Framework API tests
         run: |
           pip install robotframework robotframework-requests
